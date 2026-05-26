@@ -75,7 +75,11 @@ export function registerIpcHandlers(): void {
     async (_e, opts?: { refresh?: boolean }): Promise<SessionSummary[]> => {
       if (opts?.refresh) invalidateRepoCache();
       const cache = await loadSessions(opts?.refresh);
-      return cache.sessions;
+      const { excludeCwdPatterns } = getSettings();
+      if (!excludeCwdPatterns.length) return cache.sessions;
+      return cache.sessions.filter(
+        (s) => !excludeCwdPatterns.some((p) => s.cwd.includes(p)),
+      );
     },
   );
 

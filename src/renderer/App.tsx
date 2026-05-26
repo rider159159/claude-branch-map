@@ -92,13 +92,18 @@ export function App() {
       const next = await api.setSettings(patch);
       if (fetchToken.current !== token) return;
       setSettings(next);
-      // settings affect branch results only; sessions list stays the same.
+      // Session list might change (cwd excludes) and branch results always
+      // change (mode A/B, repo override) — re-list and re-fetch branches.
+      // The main process caches the parsed sessions so this is cheap.
+      const list = await api.listSessions();
+      if (fetchToken.current !== token) return;
+      setSessions(list);
       setBranchState(
-        new Map(sessions.map((sess) => [sess.sessionId, { status: 'loading' }])),
+        new Map(list.map((sess) => [sess.sessionId, { status: 'loading' }])),
       );
-      fetchBranchesFor(sessions, token);
+      fetchBranchesFor(list, token);
     },
-    [sessions, fetchBranchesFor],
+    [fetchBranchesFor],
   );
 
   const onCopy = useCallback(async (sessionId: string) => {

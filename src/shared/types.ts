@@ -44,9 +44,15 @@ export interface SessionBranchResult {
 export interface AppSettings {
   repoPathOverride: string | null;
   branchIconMode: BranchIconMode;
+  excludeCwdPatterns: string[];
 }
+
+export const DEFAULT_EXCLUDE_CWD_PATTERNS = [
+  '.claude-mem/observer-sessions',
+];
 
 export const DEFAULT_SETTINGS: AppSettings = {
   repoPathOverride: null,
   branchIconMode: 'created',
+  excludeCwdPatterns: DEFAULT_EXCLUDE_CWD_PATTERNS,
 };

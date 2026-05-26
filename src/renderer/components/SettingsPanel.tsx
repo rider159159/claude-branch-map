@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { AppSettings, BranchIconMode } from '@shared/types';
 import { api } from '../api';
 import { shortenPath } from '../format';
@@ -9,6 +9,14 @@ interface Props {
 }
 
 export function SettingsPanel({ settings, onChange }: Props) {
+  const [excludeText, setExcludeText] = useState(() =>
+    settings.excludeCwdPatterns.join('\n'),
+  );
+
+  useEffect(() => {
+    setExcludeText(settings.excludeCwdPatterns.join('\n'));
+  }, [settings.excludeCwdPatterns]);
+
   const pickRepo = useCallback(async () => {
     const path = await api.pickRepo();
     if (path) onChange({ repoPathOverride: path });
@@ -17,6 +25,17 @@ export function SettingsPanel({ settings, onChange }: Props) {
   const clearRepo = useCallback(() => {
     onChange({ repoPathOverride: null });
   }, [onChange]);
+
+  const commitExcludes = useCallback(() => {
+    const patterns = excludeText
+      .split('\n')
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+    const same =
+      patterns.length === settings.excludeCwdPatterns.length &&
+      patterns.every((p, i) => p === settings.excludeCwdPatterns[i]);
+    if (!same) onChange({ excludeCwdPatterns: patterns });
+  }, [excludeText, settings.excludeCwdPatterns, onChange]);
 
   return (
     <section className="settings">
@@ -55,6 +74,26 @@ export function SettingsPanel({ settings, onChange }: Props) {
               B · Created and with at least one commit
             </option>
           </select>
+        </div>
+      </div>
+      <div className="settings-row settings-row-top">
+        <label className="settings-label" htmlFor="exclude-cwd-text">
+          Hide cwd containing
+        </label>
+        <div className="settings-control settings-control-col">
+          <textarea
+            id="exclude-cwd-text"
+            className="settings-textarea"
+            value={excludeText}
+            onChange={(e) => setExcludeText(e.target.value)}
+            onBlur={commitExcludes}
+            rows={3}
+            placeholder=".claude-mem/observer-sessions"
+            spellCheck={false}
+          />
+          <span className="settings-hint">
+            One substring per line. Sessions whose cwd includes any line are hidden. Click outside to apply.
+          </span>
         </div>
       </div>
     </section>
