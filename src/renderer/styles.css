@@ -101,6 +101,44 @@ button.ghost { background: var(--bg-row); }
 }
 .settings-textarea:focus { outline: none; border-color: var(--accent); }
 .settings-hint { color: var(--text-mute); font-size: 11px; max-width: 520px; }
+
+.hidden-projects {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 520px;
+}
+.hidden-project-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.hidden-project-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hidden-project-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.hidden-project-path {
+  font-size: 11px;
+  color: var(--text-mute);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .settings-value {
   color: var(--text);
   background: var(--bg-row);
@@ -163,7 +201,8 @@ select {
   padding: 4px 8px 12px;
 }
 .project-item {
-  display: block;
+  display: flex;
+  align-items: flex-start;
   width: 100%;
   text-align: left;
   background: transparent;
@@ -175,11 +214,43 @@ select {
   color: var(--text);
   font: inherit;
   transition: background 100ms ease, border-color 100ms ease;
+  position: relative;
 }
 .project-item:hover { background: var(--bg-row-hover); }
 .project-item.selected {
   background: var(--accent-soft);
   border-color: var(--accent);
+}
+.project-item-main {
+  flex: 1;
+  min-width: 0;
+}
+.project-hide-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-mute);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 100ms ease, background 100ms ease, color 100ms ease;
+}
+.project-item:hover .project-hide-btn,
+.project-item:focus-within .project-hide-btn { opacity: 1; }
+.project-hide-btn:hover {
+  background: var(--bg-row);
+  color: var(--text);
+}
+.project-hide-btn:focus-visible {
+  opacity: 1;
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
 }
 .project-item-skeleton { cursor: default; }
 .project-item-skeleton:hover { background: transparent; }

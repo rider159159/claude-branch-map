@@ -98,10 +98,12 @@ export function App() {
         setLoadingProjects(false);
 
         // Pick selection: prefer the requested dir, then keep the current one
-        // if it still exists, else fall back to the most recent project.
-        const candidates = [opts?.preferDir, selectedDir, list[0]?.encodedDirName ?? null];
+        // if it still exists, else fall back to the most recent VISIBLE project
+        // — we never auto-jump into something the user explicitly hid.
+        const visible = list.filter((p) => !p.hidden);
+        const candidates = [opts?.preferDir, selectedDir, visible[0]?.encodedDirName ?? null];
         const next = candidates.find(
-          (c): c is string => !!c && list.some((p) => p.encodedDirName === c),
+          (c): c is string => !!c && visible.some((p) => p.encodedDirName === c),
         );
         if (next) {
           setSelectedDir(next);
@@ -137,13 +139,74 @@ export function App() {
     [selectedDir, loadSessionsForProject],
   );
 
+  // Splits depend on `projects` (which carries the persisted `hidden` flag
+  // from the main process) so a refresh restores the same partition.
+  const visibleProjects = projects.filter((p) => !p.hidden);
+  const hiddenProjectsList = projects.filter((p) => p.hidden);
+
+  const updateHiddenSet = useCallback(
+    async (nextHidden: string[]) => {
+      const next = await api.setSettings({ hiddenProjects: nextHidden });
+      setSettings(next);
+      // Re-tag the in-memory project list so the UI flips immediately without
+      // re-scanning ~/.claude/projects/ from disk.
+      setProjects((prev) => {
+        const set = new Set(next.hiddenProjects);
+        return prev.map((p) =>
+          p.hidden === set.has(p.encodedDirName) ? p : { ...p, hidden: set.has(p.encodedDirName) },
+        );
+      });
+      return next;
+    },
+    [],
+  );
+
+  const onHideProject = useCallback(
+    async (encodedDir: string) => {
+      const current = new Set(settings?.hiddenProjects ?? []);
+      if (current.has(encodedDir)) return;
+      current.add(encodedDir);
+      await updateHiddenSet(Array.from(current));
+
+      // If we just hid the selected project, jump to the next still-visible
+      // one so the right pane never sits on stale sessions.
+      if (encodedDir === selectedDir) {
+        const nextVisible = projects.find(
+          (p) => p.encodedDirName !== encodedDir && !current.has(p.encodedDirName),
+        );
+        if (nextVisible) {
+          setSelectedDir(nextVisible.encodedDirName);
+          loadSessionsForProject(nextVisible.encodedDirName);
+        } else {
+          setSelectedDir(null);
+          setSessions([]);
+          setBranchState(new Map());
+        }
+      }
+    },
+    [settings, selectedDir, projects, updateHiddenSet, loadSessionsForProject],
+  );
+
+  const onShowProject = useCallback(
+    async (encodedDir: string) => {
+      const current = new Set(settings?.hiddenProjects ?? []);
+      if (!current.has(encodedDir)) return;
+      current.delete(encodedDir);
+      await updateHiddenSet(Array.from(current));
+    },
+    [settings, updateHiddenSet],
+  );
+
   const onSettingsChange = useCallback(
     async (patch: Partial<AppSettings>) => {
       const next = await api.setSettings(patch);
       setSettings(next);
-      // Re-pull project list (filter changes) and re-resolve branches for the
-      // currently visible project (mode A/B or repo override changed).
-      await loadProjects({ preferDir: selectedDir });
+      // hiddenProjects toggles are handled by their own helpers above; for
+      // everything else we re-pull because the change may affect which
+      // projects pass the cwd filter or which branches get returned.
+      if (!('hiddenProjects' in patch)) {
+        await loadProjects({ preferDir: selectedDir });
+      }
     },
     [loadProjects, selectedDir],
   );
@@ -153,7 +216,7 @@ export function App() {
     setToast(`Copied: ${cmd}`);
   }, []);
 
-  const selectedProject = projects.find((p) => p.encodedDirName === selectedDir) ?? null;
+  const selectedProject = visibleProjects.find((p) => p.encodedDirName === selectedDir) ?? null;
 
   return (
     <div className="app">
@@ -177,14 +240,20 @@ export function App() {
       </header>
 
       {showSettings && settings && (
-        <SettingsPanel settings={settings} onChange={onSettingsChange} />
+        <SettingsPanel
+          settings={settings}
+          hiddenProjects={hiddenProjectsList}
+          onChange={onSettingsChange}
+          onShowProject={onShowProject}
+        />
       )}
 
       <div className="body">
         <ProjectSidebar
-          projects={projects}
+          projects={visibleProjects}
           selectedEncodedDir={selectedDir}
           onSelect={onSelectProject}
+          onHide={onHideProject}
           loading={loadingProjects}
         />
         <main className="content">

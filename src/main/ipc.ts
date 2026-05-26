@@ -59,7 +59,7 @@ function normalizePath(s: string): string {
   return s.replace(/\\/g, '/');
 }
 
-function projectIsHidden(project: ProjectInfo, patterns: string[]): boolean {
+function projectMatchesExcludePattern(project: ProjectInfo, patterns: string[]): boolean {
   if (patterns.length === 0) return false;
   const cwd = normalizePath(project.actualPath);
   return patterns.some((p) => cwd.includes(p));
@@ -125,9 +125,15 @@ export function registerIpcHandlers(): void {
     async (_e, opts?: { refresh?: boolean }): Promise<ProjectInfo[]> => {
       if (opts?.refresh) resetAllCaches();
       const projects = await loadProjects(opts?.refresh);
-      const { excludeCwdPatterns } = getSettings();
+      const { excludeCwdPatterns, hiddenProjects } = getSettings();
       const patterns = excludeCwdPatterns.map(normalizePath);
-      return projects.filter((p) => !projectIsHidden(p, patterns));
+      const hiddenSet = new Set(hiddenProjects);
+      // cwd patterns fully remove projects (they're "filtered out" — never
+      // appear anywhere in the UI). hiddenProjects only marks the flag so the
+      // sidebar can drop them but Settings can still list them for restore.
+      return projects
+        .filter((p) => !projectMatchesExcludePattern(p, patterns))
+        .map((p) => (hiddenSet.has(p.encodedDirName) ? { ...p, hidden: true } : p));
     },
   );
 

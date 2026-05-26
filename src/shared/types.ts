@@ -20,6 +20,7 @@ export interface ProjectInfo {
   displayName: string;      // last segment for the sidebar label
   sessionCount: number;
   lastModified: number;     // ms epoch — newest jsonl mtime
+  hidden: boolean;          // user toggled hide on this project (persists)
 }
 
 export interface BranchInfo {
@@ -53,6 +54,7 @@ export interface AppSettings {
   repoPathOverride: string | null;
   branchIconMode: BranchIconMode;
   excludeCwdPatterns: string[];
+  hiddenProjects: string[];   // encodedDirName values that the user manually hid
 }
 
 export const DEFAULT_EXCLUDE_CWD_PATTERNS = [
@@ -63,4 +65,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   repoPathOverride: null,
   branchIconMode: 'created',
   excludeCwdPatterns: DEFAULT_EXCLUDE_CWD_PATTERNS,
+  hiddenProjects: [],
 };

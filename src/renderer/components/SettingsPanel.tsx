@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AppSettings, BranchIconMode } from '@shared/types';
+import type { AppSettings, BranchIconMode, ProjectInfo } from '@shared/types';
 import { api } from '../api';
 import { shortenPath } from '../format';
 
 interface Props {
   settings: AppSettings;
+  hiddenProjects: ProjectInfo[];
   onChange: (patch: Partial<AppSettings>) => void;
+  onShowProject: (encodedDirName: string) => void;
 }
 
-export function SettingsPanel({ settings, onChange }: Props) {
+export function SettingsPanel({ settings, hiddenProjects, onChange, onShowProject }: Props) {
   const [excludeText, setExcludeText] = useState(() =>
     settings.excludeCwdPatterns.join('\n'),
   );
@@ -93,6 +95,38 @@ export function SettingsPanel({ settings, onChange }: Props) {
           />
           <span className="settings-hint">
             One substring per line. Sessions whose cwd includes any line are hidden. Click outside to apply.
+          </span>
+        </div>
+      </div>
+      <div className="settings-row settings-row-top">
+        <label className="settings-label">Hidden projects</label>
+        <div className="settings-control settings-control-col">
+          {hiddenProjects.length === 0 ? (
+            <span className="settings-hint">
+              No hidden projects. Click the eye-off icon on a project to hide it.
+            </span>
+          ) : (
+            <ul className="hidden-projects">
+              {hiddenProjects.map((p) => (
+                <li key={p.encodedDirName} className="hidden-project-item">
+                  <div className="hidden-project-info">
+                    <span className="hidden-project-name">{p.displayName}</span>
+                    <span className="hidden-project-path" title={p.actualPath}>
+                      {shortenPath(p.actualPath, 4)}
+                    </span>
+                  </div>
+                  <button
+                    className="ghost"
+                    onClick={() => onShowProject(p.encodedDirName)}
+                  >
+                    Show
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <span className="settings-hint">
+            Hiding only affects this UI — jsonl files on disk are untouched.
           </span>
         </div>
       </div>
