@@ -35,6 +35,12 @@ export interface MappedSession {
   repoError?: string;
 }
 
+export interface SessionBranchResult {
+  branches: MappedBranch[];
+  repoPath: string | null;
+  repoError?: string;
+}
+
 export interface AppSettings {
   repoPathOverride: string | null;
   branchIconMode: BranchIconMode;

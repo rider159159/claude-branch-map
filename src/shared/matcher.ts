@@ -15,7 +15,7 @@ function inRange(ts: number, lo: number, hi: number): boolean {
   return ts >= lo && ts <= hi;
 }
 
-function matchByTimestamp(
+export function matchByTimestamp(
   session: SessionSummary,
   branches: BranchInfo[],
   mode: AppSettings['branchIconMode'],
@@ -38,14 +38,14 @@ function matchByTimestamp(
       source: 'timestamp',
     });
   }
-  // Multiple low-confidence matches stay 'low'. If multiple were high, drop the weakest to 'low' to flag ambiguity.
+  // Multiple high-confidence matches means ambiguity — downgrade them all to low so the UI flags it.
   if (hits.filter((h) => h.confidence === 'high').length > 1) {
     return hits.map((h) => ({ ...h, confidence: 'low' as const }));
   }
   return hits;
 }
 
-function matchByHook(
+export function matchByHook(
   branchNames: string[],
   branches: BranchInfo[],
 ): MappedBranch[] {
@@ -73,6 +73,10 @@ function matchByHook(
   return out;
 }
 
+/**
+ * Eager full mapping — kept for compatibility / tests, but the IPC path now
+ * streams sessions first and resolves branches per-row to keep the UI responsive.
+ */
 export interface BuildMappingOptions {
   settings: AppSettings;
 }

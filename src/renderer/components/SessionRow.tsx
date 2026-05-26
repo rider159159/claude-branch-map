@@ -1,15 +1,15 @@
-import type { MappedSession } from '@shared/types';
+import type { SessionSummary } from '@shared/types';
 import { absoluteTime, relativeTime, shortenPath } from '../format';
 import { BranchBadge } from './BranchBadge';
+import type { RowState } from './SessionList';
 
 interface Props {
-  mapped: MappedSession;
+  session: SessionSummary;
+  state: RowState;
   onCopy: (sessionId: string) => void;
 }
 
-export function SessionRow({ mapped, onCopy }: Props) {
-  const { session, branches, repoPath, repoError } = mapped;
-
+export function SessionRow({ session, state, onCopy }: Props) {
   return (
     <article className="session-row">
       <div className="session-main">
@@ -28,18 +28,11 @@ export function SessionRow({ mapped, onCopy }: Props) {
           <span className="meta-item">{session.messageCount} msgs</span>
         </div>
         <div className="session-branches">
-          {branches.length === 0 && (
-            <span className="branches-empty">
-              {repoError ? `no branches (${repoError})` : 'no matching branch'}
-            </span>
-          )}
-          {branches.map((b, i) => (
-            <BranchBadge key={`${b.branch.name}-${i}`} mapped={b} />
-          ))}
+          <BranchArea state={state} />
         </div>
-        {repoPath && (
-          <div className="session-repo" title={repoPath}>
-            repo: {shortenPath(repoPath)}
+        {state.status === 'loaded' && state.result.repoPath && (
+          <div className="session-repo" title={state.result.repoPath}>
+            repo: {shortenPath(state.result.repoPath)}
           </div>
         )}
       </div>
@@ -52,5 +45,34 @@ export function SessionRow({ mapped, onCopy }: Props) {
         </code>
       </div>
     </article>
+  );
+}
+
+function BranchArea({ state }: { state: RowState }) {
+  if (state.status === 'loading') {
+    return (
+      <>
+        <span className="branch-skeleton" />
+        <span className="branch-skeleton branch-skeleton-narrow" />
+      </>
+    );
+  }
+  if (state.status === 'error') {
+    return <span className="branches-empty">branch lookup failed: {state.error}</span>;
+  }
+  const { branches, repoError } = state.result;
+  if (branches.length === 0) {
+    return (
+      <span className="branches-empty">
+        {repoError ? `no branches (${repoError})` : 'no matching branch'}
+      </span>
+    );
+  }
+  return (
+    <>
+      {branches.map((b, i) => (
+        <BranchBadge key={`${b.branch.name}-${i}`} mapped={b} />
+      ))}
+    </>
   );
 }

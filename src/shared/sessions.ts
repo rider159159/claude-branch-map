@@ -137,7 +137,7 @@ async function parseSessionFile(filePath: string, fallbackCwd: string): Promise<
   };
 }
 
-export async function scanSessions(): Promise<SessionSummary[]> {
+async function collectJsonlPaths(): Promise<Array<{ filePath: string; fallbackCwd: string }>> {
   const projectsDir = getProjectsDir();
   let entries: string[];
   try {
@@ -146,32 +146,56 @@ export async function scanSessions(): Promise<SessionSummary[]> {
     return [];
   }
 
-  const result: SessionSummary[] = [];
-  for (const entry of entries) {
-    const dirPath = join(projectsDir, entry);
-    let stat;
-    try {
-      stat = await fs.stat(dirPath);
-    } catch {
-      continue;
-    }
-    if (!stat.isDirectory()) continue;
-    const fallbackCwd = decodeProjectDirName(entry);
+  const dirResults = await Promise.all(
+    entries.map(async (entry) => {
+      const dirPath = join(projectsDir, entry);
+      try {
+        const stat = await fs.stat(dirPath);
+        if (!stat.isDirectory()) return [];
+      } catch {
+        return [];
+      }
+      const fallbackCwd = decodeProjectDirName(entry);
+      let files: string[];
+      try {
+        files = await fs.readdir(dirPath);
+      } catch {
+        return [];
+      }
+      return files
+        .filter((f) => f.endsWith('.jsonl'))
+        .map((file) => ({ filePath: join(dirPath, file), fallbackCwd }));
+    }),
+  );
+  return dirResults.flat();
+}
 
-    let files: string[];
-    try {
-      files = await fs.readdir(dirPath);
-    } catch {
-      continue;
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const idx = cursor++;
+      results[idx] = await worker(items[idx]);
     }
-    for (const file of files) {
-      if (!file.endsWith('.jsonl')) continue;
-      const filePath = join(dirPath, file);
-      const summary = await parseSessionFile(filePath, fallbackCwd);
-      if (summary) result.push(summary);
-    }
-  }
+  });
+  await Promise.all(runners);
+  return results;
+}
 
+export async function scanSessions(): Promise<SessionSummary[]> {
+  const paths = await collectJsonlPaths();
+  // Parallel file reads with a bounded concurrency keep big projects (hundreds of
+  // jsonl files) from blocking the event loop sequentially while avoiding
+  // "too many open files" on platforms with low ulimit defaults.
+  const parsed = await mapWithConcurrency(paths, 16, ({ filePath, fallbackCwd }) =>
+    parseSessionFile(filePath, fallbackCwd),
+  );
+  const result = parsed.filter((s): s is SessionSummary => s !== null);
   result.sort((a, b) => b.lastTs - a.lastTs);
   return result;
 }

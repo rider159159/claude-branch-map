@@ -185,6 +185,27 @@ select {
 }
 .branch-current { font-size: 10px; }
 
+.branch-skeleton {
+  display: inline-block;
+  height: 20px;
+  width: 96px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elev) 0%,
+    var(--bg-row-hover) 50%,
+    var(--bg-elev) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+.branch-skeleton-narrow { width: 64px; }
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
 .toast {
   position: fixed;
   bottom: 20px;

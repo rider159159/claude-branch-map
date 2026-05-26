@@ -16,49 +16,41 @@ function git(repoPath: string): SimpleGit {
   return simpleGit({ baseDir: repoPath, binary: 'git' });
 }
 
+/**
+ * Single `git for-each-ref` call to enumerate local branches with tip commit time.
+ *
+ * Compared to the earlier per-branch `git log` loop this is one subprocess instead of N.
+ * Trade-off: we surface the branch's tip commit time as both `firstCommitTs` and
+ * `lastCommitTs`, and `commitCount` is set to 1 if the branch exists. That makes
+ * mode B's "has commits" filter equivalent to mode A for the fast path; a precise
+ * per-branch count can be reintroduced later if it proves necessary.
+ */
 export async function listBranches(repoPath: string): Promise<BranchInfo[]> {
   if (!(await isGitRepo(repoPath))) return [];
   const g = git(repoPath);
-  const branchSummary = await g.branchLocal();
-  const branchNames = branchSummary.all;
-  const current = branchSummary.current;
-
+  let raw: string;
+  try {
+    raw = await g.raw([
+      'for-each-ref',
+      '--format=%(HEAD)\t%(refname:short)\t%(committerdate:unix)',
+      'refs/heads',
+    ]);
+  } catch {
+    return [];
+  }
   const infos: BranchInfo[] = [];
-  for (const name of branchNames) {
-    const exclusions = branchNames.filter((b) => b !== name).map((b) => `^${b}`);
-    let firstCommitTs = 0;
-    let lastCommitTs = 0;
-    let commitCount = 0;
-    try {
-      const args = ['log', name, ...exclusions, '--pretty=format:%at', '--no-merges'];
-      const raw = await g.raw(args);
-      const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
-      if (lines.length > 0) {
-        const tss = lines.map((l) => parseInt(l, 10) * 1000).filter(Number.isFinite);
-        if (tss.length > 0) {
-          firstCommitTs = Math.min(...tss);
-          lastCommitTs = Math.max(...tss);
-          commitCount = tss.length;
-        }
-      }
-      if (commitCount === 0) {
-        // Branch has no unique commits; fall back to tip commit timestamp so it still has a timeline anchor.
-        const tipRaw = await g.raw(['log', '-1', name, '--pretty=format:%at']);
-        const tip = parseInt(tipRaw.trim(), 10);
-        if (Number.isFinite(tip)) {
-          firstCommitTs = tip * 1000;
-          lastCommitTs = tip * 1000;
-        }
-      }
-    } catch {
-      // Skip branches that fail to log (e.g. invalid refs).
-    }
+  for (const line of raw.split('\n')) {
+    if (!line) continue;
+    const [head, name, tsStr] = line.split('\t');
+    if (!name) continue;
+    const tsSec = parseInt(tsStr ?? '', 10);
+    const tipMs = Number.isFinite(tsSec) ? tsSec * 1000 : 0;
     infos.push({
       name,
-      firstCommitTs,
-      lastCommitTs,
-      commitCount,
-      isCurrent: name === current,
+      firstCommitTs: tipMs,
+      lastCommitTs: tipMs,
+      commitCount: 1,
+      isCurrent: head === '*',
     });
   }
   return infos;

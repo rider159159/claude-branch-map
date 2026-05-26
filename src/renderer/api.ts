@@ -1,7 +1,12 @@
-import type { AppSettings, MappedSession } from '@shared/types';
+import type {
+  AppSettings,
+  SessionBranchResult,
+  SessionSummary,
+} from '@shared/types';
 
 export interface RendererApi {
-  listSessions: () => Promise<MappedSession[]>;
+  listSessions: (opts?: { refresh?: boolean }) => Promise<SessionSummary[]>;
+  branchesForSession: (sessionId: string) => Promise<SessionBranchResult>;
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>;
   copyResume: (sessionId: string) => Promise<string>;

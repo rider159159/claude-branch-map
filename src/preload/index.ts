@@ -1,8 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AppSettings, MappedSession } from '@shared/types';
+import type {
+  AppSettings,
+  SessionBranchResult,
+  SessionSummary,
+} from '@shared/types';
 
 const api = {
-  listSessions: (): Promise<MappedSession[]> => ipcRenderer.invoke('sessions:list'),
+  listSessions: (opts?: { refresh?: boolean }): Promise<SessionSummary[]> =>
+    ipcRenderer.invoke('sessions:list', opts),
+  branchesForSession: (sessionId: string): Promise<SessionBranchResult> =>
+    ipcRenderer.invoke('branches:forSession', sessionId),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   setSettings: (patch: Partial<AppSettings>): Promise<AppSettings> =>
     ipcRenderer.invoke('settings:set', patch),
