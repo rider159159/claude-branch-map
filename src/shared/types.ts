@@ -14,6 +14,14 @@ export interface SessionSummary {
   filePath: string;
 }
 
+export interface ProjectInfo {
+  encodedDirName: string;   // raw folder name under ~/.claude/projects/
+  actualPath: string;       // decoded real cwd
+  displayName: string;      // last segment for the sidebar label
+  sessionCount: number;
+  lastModified: number;     // ms epoch — newest jsonl mtime
+}
+
 export interface BranchInfo {
   name: string;
   firstCommitTs: number;

@@ -199,3 +199,24 @@ export async function scanSessions(): Promise<SessionSummary[]> {
   result.sort((a, b) => b.lastTs - a.lastTs);
   return result;
 }
+
+export async function scanSessionsInProject(
+  encodedDirPath: string,
+  fallbackCwd: string,
+): Promise<SessionSummary[]> {
+  let files: string[];
+  try {
+    files = await fs.readdir(encodedDirPath);
+  } catch {
+    return [];
+  }
+  const jsonlPaths = files
+    .filter((f) => f.endsWith('.jsonl'))
+    .map((file) => ({ filePath: join(encodedDirPath, file), fallbackCwd }));
+  const parsed = await mapWithConcurrency(jsonlPaths, 16, ({ filePath, fallbackCwd: cwd }) =>
+    parseSessionFile(filePath, cwd),
+  );
+  const result = parsed.filter((s): s is SessionSummary => s !== null);
+  result.sort((a, b) => b.lastTs - a.lastTs);
+  return result;
+}

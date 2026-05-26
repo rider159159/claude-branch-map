@@ -1,11 +1,13 @@
 import type {
   AppSettings,
+  ProjectInfo,
   SessionBranchResult,
   SessionSummary,
 } from '@shared/types';
 
 export interface RendererApi {
-  listSessions: (opts?: { refresh?: boolean }) => Promise<SessionSummary[]>;
+  listProjects: (opts?: { refresh?: boolean }) => Promise<ProjectInfo[]>;
+  sessionsForProject: (encodedDirName: string) => Promise<SessionSummary[]>;
   branchesForSession: (sessionId: string) => Promise<SessionBranchResult>;
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>;
