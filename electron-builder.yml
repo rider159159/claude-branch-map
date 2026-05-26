@@ -1,0 +1,23 @@
+appId: com.claudebranchmap.app
+productName: Claude Branch Map
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+  - "!**/{.DS_Store,.editorconfig,.eslintrc,.gitignore,.prettierrc,tsconfig*.json}"
+asar: true
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ClaudeBranchMap-Setup-${version}.exe
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallDir: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Claude Branch Map

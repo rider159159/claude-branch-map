@@ -1,0 +1,33 @@
+{
+  "name": "claude-branch-map",
+  "version": "0.1.0",
+  "description": "Desktop GUI to browse local Claude Code conversations and map them to Git branches.",
+  "main": "out/main/index.js",
+  "author": "claude-branch-map",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "package:win": "electron-vite build && electron-builder --win",
+    "package:dir": "electron-vite build && electron-builder --dir"
+  },
+  "dependencies": {
+    "electron-store": "8.2.0",
+    "simple-git": "3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.30",
+    "@types/react": "18.2.74",
+    "@types/react-dom": "18.2.24",
+    "@vitejs/plugin-react": "4.2.1",
+    "electron": "30.0.1",
+    "electron-builder": "24.13.3",
+    "electron-vite": "2.1.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "typescript": "5.4.5",
+    "vite": "5.2.8"
+  }
+}
