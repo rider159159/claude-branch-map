@@ -77,9 +77,14 @@ export function registerIpcHandlers(): void {
       const cache = await loadSessions(opts?.refresh);
       const { excludeCwdPatterns } = getSettings();
       if (!excludeCwdPatterns.length) return cache.sessions;
-      return cache.sessions.filter(
-        (s) => !excludeCwdPatterns.some((p) => s.cwd.includes(p)),
-      );
+      // Normalize path separators so a single "foo/bar" pattern matches both
+      // "C:\Users\…\foo\bar" (Windows) and "/home/…/foo/bar" (POSIX).
+      const norm = (s: string) => s.replace(/\\/g, '/');
+      const patterns = excludeCwdPatterns.map(norm);
+      return cache.sessions.filter((s) => {
+        const cwd = norm(s.cwd);
+        return !patterns.some((p) => cwd.includes(p));
+      });
     },
   );
 
