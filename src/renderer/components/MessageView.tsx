@@ -63,7 +63,32 @@ export function MessageView({ session, branchState, onCopy }: Props) {
 
   const visibleEvents = useMemo(() => {
     if (state.status !== 'loaded') return [];
-    return showSidechain ? state.events : state.events.filter((e) => !e.isSidechain);
+    const base = showSidechain
+      ? state.events
+      : state.events.filter((e) => !e.isSidechain);
+
+    // 過濾掉「實際渲染後會是空白」的訊息:
+    // - 沒有任何 text(含 thinking)且沒有 tool_use 的訊息
+    // - 唯一內容是 tool_result,且該 toolUseId 會被前面的 tool_use 吃掉(MessageItem 會回 null)
+    const consumed = new Set<string>();
+    for (const ev of base) {
+      for (const b of ev.blocks) {
+        if (b.kind === 'tool_use') consumed.add(b.id);
+      }
+    }
+
+    return base.filter((ev) => {
+      return ev.blocks.some((b) => {
+        if (b.kind === 'text') return b.text.trim().length > 0;
+        if (b.kind === 'thinking') return b.text.trim().length > 0;
+        if (b.kind === 'tool_use') return true;
+        if (b.kind === 'tool_result') {
+          // 若有 toolUseId 且已被 assistant tool_use 配對,渲染時會被消化 → 視為不可見
+          return !(b.toolUseId && consumed.has(b.toolUseId));
+        }
+        return false;
+      });
+    });
   }, [state, showSidechain]);
 
   const hasSidechain = useMemo(() => {
@@ -74,7 +99,7 @@ export function MessageView({ session, branchState, onCopy }: Props) {
   if (!session) {
     return (
       <section className="message-pane">
-        <div className="empty">Select a session on the left.</div>
+        <div className="empty">請從左側選擇對話。</div>
       </section>
     );
   }
@@ -94,13 +119,13 @@ export function MessageView({ session, branchState, onCopy }: Props) {
               <button
                 className="ghost"
                 onClick={() => setShowSidechain((v) => !v)}
-                title="Toggle sub-agent (sidechain) messages"
+                title="切換子代理(sub-agent / sidechain)訊息顯示"
               >
-                {showSidechain ? 'Hide sub-agent' : 'Show sub-agent'}
+                {showSidechain ? '隱藏子代理(sub-agent)' : '顯示子代理(sub-agent)'}
               </button>
             )}
             <button className="primary" onClick={() => onCopy(session.sessionId)}>
-              Copy resume
+              複製 resume 指令
             </button>
           </div>
         </div>
@@ -109,7 +134,7 @@ export function MessageView({ session, branchState, onCopy }: Props) {
           <span className="meta-divider">·</span>
           <span title={absoluteTime(session.lastTs)}>{relativeTime(session.lastTs)}</span>
           <span className="meta-divider">·</span>
-          <span>{session.messageCount} msgs</span>
+          <span>{session.messageCount} 則訊息</span>
           <code className="session-id" title={session.sessionId}>
             {session.sessionId.slice(0, 8)}
           </code>
@@ -133,10 +158,10 @@ export function MessageView({ session, branchState, onCopy }: Props) {
           </div>
         )}
         {state.status === 'error' && (
-          <div className="error">Failed to load messages: {state.error}</div>
+          <div className="error">訊息載入失敗:{state.error}</div>
         )}
         {state.status === 'loaded' && visibleEvents.length === 0 && (
-          <div className="empty">No visible messages in this session.</div>
+          <div className="empty">此對話沒有可顯示的訊息。</div>
         )}
         {state.status === 'loaded' &&
           visibleEvents.map((msg) => (
