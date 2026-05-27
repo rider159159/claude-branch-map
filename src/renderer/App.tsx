@@ -301,7 +301,7 @@ export function App() {
 
   const onCopy = useCallback(async (sessionId: string) => {
     const cmd = await api.copyResume(sessionId);
-    setToast(`Copied: ${cmd}`);
+    setToast(`已複製:${cmd}`);
   }, []);
 
   const selectedProject = visibleProjects.find((p) => p.encodedDirName === selectedDir) ?? null;
@@ -322,10 +322,10 @@ export function App() {
             onClick={() => loadProjects({ refresh: true, preferDir: selectedDir })}
             disabled={loadingProjects}
           >
-            {loadingProjects ? 'Loading…' : 'Refresh'}
+            {loadingProjects ? '載入中…' : '重新整理'}
           </button>
           <button className="ghost" onClick={() => setShowSettings((v) => !v)}>
-            {showSettings ? 'Close settings' : 'Settings'}
+            {showSettings ? '關閉設定' : '設定'}
           </button>
         </div>
       </header>
@@ -350,7 +350,7 @@ export function App() {
           loading={loadingProjects}
         />
         <aside className="session-pane">
-          {error && <div className="error">Failed to load: {error}</div>}
+          {error && <div className="error">載入失敗:{error}</div>}
           {selectedProject && (
             <header className="content-header">
               <h2 className="content-title">{selectedProject.displayName}</h2>
@@ -360,10 +360,10 @@ export function App() {
             </header>
           )}
           {!error && !sessionsLoading && selectedProject && sessions.length === 0 && (
-            <div className="empty">No sessions in this project.</div>
+            <div className="empty">此專案沒有對話。</div>
           )}
           {!error && !selectedProject && !loadingProjects && (
-            <div className="empty">Select a project on the left.</div>
+            <div className="empty">請從左側選擇專案。</div>
           )}
           <div className="session-pane-scroll">
             <SessionList

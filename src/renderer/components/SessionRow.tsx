@@ -54,8 +54,8 @@ export function SessionRow({ session, state, selected, onSelect, onTogglePin, on
             stop(e);
             onTogglePin(session.sessionId);
           }}
-          aria-label={session.pinned ? 'Unpin session' : 'Pin session'}
-          title={session.pinned ? 'Unpin' : 'Pin to top'}
+          aria-label={session.pinned ? '取消釘選對話' : '釘選對話'}
+          title={session.pinned ? '取消釘選' : '釘選至頂端'}
         >
           <PinIcon filled={session.pinned} />
         </button>
@@ -65,8 +65,8 @@ export function SessionRow({ session, state, selected, onSelect, onTogglePin, on
             stop(e);
             onHide(session.sessionId);
           }}
-          aria-label="Hide session"
-          title="Hide (restore in Settings)"
+          aria-label="隱藏對話"
+          title="隱藏(可至設定還原)"
         >
           <HideIcon />
         </button>
@@ -84,7 +84,7 @@ export function SessionRow({ session, state, selected, onSelect, onTogglePin, on
             {relativeTime(session.lastTs)}
           </span>
           <span className="meta-divider">·</span>
-          <span className="meta-item">{session.messageCount} msgs</span>
+          <span className="meta-item">{session.messageCount} 則訊息</span>
           {session.model && (
             <>
               <span className="meta-divider">·</span>
@@ -98,16 +98,16 @@ export function SessionRow({ session, state, selected, onSelect, onTogglePin, on
               <span className="meta-divider">·</span>
               <span
                 className="meta-item"
-                title={`input ${session.totalInputTokens} · output ${session.totalOutputTokens}`}
+                title={`輸入 ${session.totalInputTokens} · 輸出 ${session.totalOutputTokens}`}
               >
-                {formatTokens(totalTokens)} tok
+                {formatTokens(totalTokens)} tokens
               </span>
             </>
           )}
           {cost && (
             <>
               <span className="meta-divider">·</span>
-              <span className="meta-item" title="Total cost (sum of costUSD)">
+              <span className="meta-item" title="總成本(costUSD 加總)">
                 {cost}
               </span>
             </>
@@ -118,7 +118,7 @@ export function SessionRow({ session, state, selected, onSelect, onTogglePin, on
         </div>
         {state.status === 'loaded' && state.result.repoPath && (
           <div className="session-repo" title={state.result.repoPath}>
-            repo: {shortenPath(state.result.repoPath)}
+            儲存庫(repo):{shortenPath(state.result.repoPath)}
           </div>
         )}
       </div>
@@ -139,13 +139,13 @@ function BranchArea({ state }: { state: RowState }) {
     );
   }
   if (state.status === 'error') {
-    return <span className="branches-empty">branch lookup failed: {state.error}</span>;
+    return <span className="branches-empty">分支查詢失敗:{state.error}</span>;
   }
   const { branches, repoError } = state.result;
   if (branches.length === 0) {
     return (
       <span className="branches-empty">
-        {repoError ? `no branches (${repoError})` : 'no matching branch'}
+        {repoError ? `無分支(${repoError})` : '找不到對應分支'}
       </span>
     );
   }

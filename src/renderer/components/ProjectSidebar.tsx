@@ -23,7 +23,7 @@ export function ProjectSidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-title">Projects</span>
+        <span className="sidebar-title">專案</span>
         <span className="sidebar-count">{projects.length}</span>
       </div>
       <div className="project-list">
@@ -35,7 +35,7 @@ export function ProjectSidebar({
           </>
         )}
         {!loading && projects.length === 0 && (
-          <div className="sidebar-empty">No projects found.</div>
+          <div className="sidebar-empty">找不到專案。</div>
         )}
         {projects.map((p) => {
           const selected = p.encodedDirName === selectedEncodedDir;
@@ -59,7 +59,7 @@ export function ProjectSidebar({
                 <div className="project-name">{p.displayName}</div>
                 <div className="project-path">{shortenPath(p.actualPath, 3)}</div>
                 <div className="project-meta">
-                  <span>{p.sessionCount} sessions</span>
+                  <span>{p.sessionCount} 則對話</span>
                   <span className="dot">·</span>
                   <span>{relativeTime(p.lastModified)}</span>
                 </div>
@@ -71,8 +71,8 @@ export function ProjectSidebar({
                     stop(e);
                     onTogglePin(p.encodedDirName);
                   }}
-                  aria-label={p.pinned ? `Unpin ${p.displayName}` : `Pin ${p.displayName}`}
-                  title={p.pinned ? 'Unpin' : 'Pin to top'}
+                  aria-label={p.pinned ? `取消釘選 ${p.displayName}` : `釘選 ${p.displayName}`}
+                  title={p.pinned ? '取消釘選' : '釘選至頂端'}
                 >
                   <PinIcon filled={p.pinned} />
                 </button>
@@ -82,8 +82,8 @@ export function ProjectSidebar({
                     stop(e);
                     onHide(p.encodedDirName);
                   }}
-                  aria-label={`Hide ${p.displayName}`}
-                  title="Hide from sidebar (restore in Settings)"
+                  aria-label={`隱藏 ${p.displayName}`}
+                  title="從側邊欄隱藏(可至設定還原)"
                 >
                   <HideIcon />
                 </button>

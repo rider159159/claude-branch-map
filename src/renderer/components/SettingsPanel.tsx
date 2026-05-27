@@ -60,26 +60,26 @@ export function SettingsPanel({
   return (
     <section className="settings">
       <div className="settings-row">
-        <label className="settings-label">Repo path</label>
+        <label className="settings-label">儲存庫(repo)路徑</label>
         <div className="settings-control">
           <span className="settings-value" title={settings.repoPathOverride ?? undefined}>
             {settings.repoPathOverride
               ? shortenPath(settings.repoPathOverride, 4)
-              : 'Use each session’s cwd'}
+              : '使用各對話的 cwd'}
           </span>
           <button className="ghost" onClick={pickRepo}>
-            Choose folder…
+            選擇資料夾…
           </button>
           {settings.repoPathOverride && (
             <button className="ghost" onClick={clearRepo}>
-              Reset
+              重設
             </button>
           )}
         </div>
       </div>
       <div className="settings-row">
         <label className="settings-label" htmlFor="branch-mode-select">
-          Branch icon mode
+          分支圖示模式
         </label>
         <div className="settings-control">
           <select
@@ -89,16 +89,16 @@ export function SettingsPanel({
               onChange({ branchIconMode: e.target.value as BranchIconMode })
             }
           >
-            <option value="created">A · Branches created during the session</option>
+            <option value="created">A · 對話期間建立的分支</option>
             <option value="created-with-commits">
-              B · Created and with at least one commit
+              B · 建立且至少有一次 commit
             </option>
           </select>
         </div>
       </div>
       <div className="settings-row settings-row-top">
         <label className="settings-label" htmlFor="exclude-cwd-text">
-          Hide cwd containing
+          隱藏 cwd 包含
         </label>
         <div className="settings-control settings-control-col">
           <textarea
@@ -112,16 +112,16 @@ export function SettingsPanel({
             spellCheck={false}
           />
           <span className="settings-hint">
-            One substring per line. Sessions whose cwd includes any line are hidden. Click outside to apply.
+            每行一個子字串。cwd 包含任一行的對話將被隱藏。點擊外部以套用。
           </span>
         </div>
       </div>
       <div className="settings-row settings-row-top">
-        <label className="settings-label">Hidden projects</label>
+        <label className="settings-label">已隱藏的專案</label>
         <div className="settings-control settings-control-col">
           {hiddenProjects.length === 0 ? (
             <span className="settings-hint">
-              No hidden projects. Click the eye-off icon on a project to hide it.
+              沒有已隱藏的專案。點擊專案上的眼睛圖示即可隱藏。
             </span>
           ) : (
             <ul className="hidden-projects">
@@ -137,28 +137,27 @@ export function SettingsPanel({
                     className="ghost"
                     onClick={() => onShowProject(p.encodedDirName)}
                   >
-                    Show
+                    顯示
                   </button>
                 </li>
               ))}
             </ul>
           )}
           <span className="settings-hint">
-            Hiding only affects this UI — jsonl files on disk are untouched.
+            隱藏僅影響此介面 — 磁碟上的 jsonl 檔案不會更動。
           </span>
         </div>
       </div>
       <div className="settings-row settings-row-top">
-        <label className="settings-label">Hidden sessions</label>
+        <label className="settings-label">已隱藏的對話</label>
         <div className="settings-control settings-control-col">
           {settings.hiddenSessions.length === 0 ? (
             <span className="settings-hint">
-              No hidden sessions. Click the eye-off icon on a session to hide it.
+              沒有已隱藏的對話。點擊對話上的眼睛圖示即可隱藏。
             </span>
           ) : hiddenSessions.length === 0 ? (
             <span className="settings-hint">
-              {settings.hiddenSessions.length} hidden session(s). Open their project once
-              to surface them here for restore.
+              共 {settings.hiddenSessions.length} 則已隱藏對話。請先開啟對應專案一次,系統才能在此列出以便還原。
             </span>
           ) : (
             <ul className="hidden-projects">
@@ -171,14 +170,14 @@ export function SettingsPanel({
                     </span>
                   </div>
                   <button className="ghost" onClick={() => onShowSession(s.sessionId)}>
-                    Show
+                    顯示
                   </button>
                 </li>
               ))}
             </ul>
           )}
           <span className="settings-hint">
-            Hiding only affects this UI — jsonl files on disk are untouched.
+            隱藏僅影響此介面 — 磁碟上的 jsonl 檔案不會更動。
           </span>
         </div>
       </div>

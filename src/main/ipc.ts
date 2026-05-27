@@ -277,7 +277,7 @@ export function registerIpcHandlers(): void {
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
     const result = await dialog.showOpenDialog(win!, {
       properties: ['openDirectory'],
-      title: 'Choose Git repository',
+      title: '選擇 Git 儲存庫',
     });
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];

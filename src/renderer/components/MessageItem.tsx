@@ -24,11 +24,11 @@ export function MessageItem({ msg, resultMap, consumedResultIds }: Props) {
     <article className={`message-row ${roleClass}${sideClass}`}>
       <header className="message-header">
         <span className={`role-pill role-${roleClass}`}>{msg.role}</span>
-        {msg.isSidechain && <span className="role-pill role-side">sub-agent</span>}
+        {msg.isSidechain && <span className="role-pill role-side">子代理</span>}
         {msg.model && <span className="message-model">{msg.model}</span>}
         {totalTokens > 0 && (
-          <span className="message-tokens" title={`in ${msg.usage?.inputTokens} · out ${msg.usage?.outputTokens}`}>
-            {formatTokens(totalTokens)} tok
+          <span className="message-tokens" title={`輸入 ${msg.usage?.inputTokens} · 輸出 ${msg.usage?.outputTokens}`}>
+            {formatTokens(totalTokens)} tokens
           </span>
         )}
         {msg.ts !== null && (
@@ -45,7 +45,7 @@ export function MessageItem({ msg, resultMap, consumedResultIds }: Props) {
           if (b.kind === 'thinking') {
             return (
               <details key={i} className="thinking-block">
-                <summary>thinking</summary>
+                <summary>思考過程(thinking)</summary>
                 <div className="thinking-body">
                   <MessageMarkdown text={b.text} />
                 </div>
