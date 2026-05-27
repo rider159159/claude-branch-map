@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import type { SessionSummary } from '@shared/types';
 import { absoluteTime, relativeTime, shortenPath } from '../format';
 import { BranchBadge } from './BranchBadge';
@@ -6,12 +7,42 @@ import type { RowState } from './SessionList';
 interface Props {
   session: SessionSummary;
   state: RowState;
-  onCopy: (sessionId: string) => void;
+  selected: boolean;
+  onSelect: (sessionId: string) => void;
 }
 
-export function SessionRow({ session, state, onCopy }: Props) {
+function formatTokens(n: number): string {
+  if (n < 1000) return `${n}`;
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  return `${(n / 1_000_000).toFixed(2).replace(/\.00$/, '')}M`;
+}
+
+function formatCost(c: number): string {
+  if (c <= 0) return '';
+  if (c < 0.01) return '<$0.01';
+  if (c < 1) return `$${c.toFixed(2)}`;
+  return `$${c.toFixed(2)}`;
+}
+
+export function SessionRow({ session, state, selected, onSelect }: Props) {
+  const totalTokens = session.totalInputTokens + session.totalOutputTokens;
+  const cost = formatCost(session.totalCostUSD);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(session.sessionId);
+    }
+  };
+
   return (
-    <article className="session-row">
+    <article
+      className={`session-row${selected ? ' selected' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(session.sessionId)}
+      onKeyDown={handleKeyDown}
+    >
       <div className="session-main">
         <h3 className="session-title" title={session.title}>
           {session.title}
@@ -26,6 +57,33 @@ export function SessionRow({ session, state, onCopy }: Props) {
           </span>
           <span className="meta-divider">·</span>
           <span className="meta-item">{session.messageCount} msgs</span>
+          {session.model && (
+            <>
+              <span className="meta-divider">·</span>
+              <span className="meta-item meta-model" title={session.model}>
+                {session.model}
+              </span>
+            </>
+          )}
+          {totalTokens > 0 && (
+            <>
+              <span className="meta-divider">·</span>
+              <span
+                className="meta-item"
+                title={`input ${session.totalInputTokens} · output ${session.totalOutputTokens}`}
+              >
+                {formatTokens(totalTokens)} tok
+              </span>
+            </>
+          )}
+          {cost && (
+            <>
+              <span className="meta-divider">·</span>
+              <span className="meta-item" title="Total cost (sum of costUSD)">
+                {cost}
+              </span>
+            </>
+          )}
         </div>
         <div className="session-branches">
           <BranchArea state={state} />
@@ -36,14 +94,9 @@ export function SessionRow({ session, state, onCopy }: Props) {
           </div>
         )}
       </div>
-      <div className="session-actions">
-        <button className="primary" onClick={() => onCopy(session.sessionId)}>
-          Copy resume
-        </button>
-        <code className="session-id" title={session.sessionId}>
-          {session.sessionId.slice(0, 8)}
-        </code>
-      </div>
+      <code className="session-id" title={session.sessionId}>
+        {session.sessionId.slice(0, 8)}
+      </code>
     </article>
   );
 }

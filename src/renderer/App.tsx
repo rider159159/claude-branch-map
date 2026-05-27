@@ -6,6 +6,7 @@ import type {
   SessionSummary,
 } from '@shared/types';
 import { api } from './api';
+import { MessageView } from './components/MessageView';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { SessionList, type RowState } from './components/SessionList';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -16,6 +17,7 @@ const BRANCH_CONCURRENCY = 6;
 export function App() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [selectedDir, setSelectedDir] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [branchState, setBranchState] = useState<Map<string, RowState>>(new Map());
@@ -64,6 +66,7 @@ export function App() {
       setSessionsLoading(true);
       setSessions([]);
       setBranchState(new Map());
+      setSelectedSessionId(null);
       try {
         const list = await api.sessionsForProject(encodedDir);
         if (sessionsToken.current !== token) return;
@@ -112,6 +115,7 @@ export function App() {
           setSelectedDir(null);
           setSessions([]);
           setBranchState(new Map());
+          setSelectedSessionId(null);
         }
       } catch (e) {
         if (fetchToken.current !== token) return;
@@ -181,6 +185,7 @@ export function App() {
           setSelectedDir(null);
           setSessions([]);
           setBranchState(new Map());
+          setSelectedSessionId(null);
         }
       }
     },
@@ -217,6 +222,9 @@ export function App() {
   }, []);
 
   const selectedProject = visibleProjects.find((p) => p.encodedDirName === selectedDir) ?? null;
+  const selectedSession =
+    selectedSessionId ? sessions.find((s) => s.sessionId === selectedSessionId) ?? null : null;
+  const selectedBranchState = selectedSessionId ? branchState.get(selectedSessionId) : undefined;
 
   return (
     <div className="app">
@@ -256,7 +264,7 @@ export function App() {
           onHide={onHideProject}
           loading={loadingProjects}
         />
-        <main className="content">
+        <aside className="session-pane">
           {error && <div className="error">Failed to load: {error}</div>}
           {selectedProject && (
             <header className="content-header">
@@ -272,7 +280,21 @@ export function App() {
           {!error && !selectedProject && !loadingProjects && (
             <div className="empty">Select a project on the left.</div>
           )}
-          <SessionList sessions={sessions} branchState={branchState} onCopy={onCopy} />
+          <div className="session-pane-scroll">
+            <SessionList
+              sessions={sessions}
+              branchState={branchState}
+              selectedSessionId={selectedSessionId}
+              onSelect={setSelectedSessionId}
+            />
+          </div>
+        </aside>
+        <main className="content">
+          <MessageView
+            session={selectedSession}
+            branchState={selectedBranchState}
+            onCopy={onCopy}
+          />
         </main>
       </div>
 

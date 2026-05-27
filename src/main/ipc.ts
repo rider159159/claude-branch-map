@@ -3,12 +3,14 @@ import { join } from 'node:path';
 import { isGitRepo, listBranches } from '@shared/git';
 import { groupBySession, readHookRecords } from '@shared/hook';
 import { matchByHook, matchByTimestamp } from '@shared/matcher';
+import { readSessionMessages } from '@shared/messages';
 import { getProjectsDir } from '@shared/paths';
 import { scanProjects } from '@shared/projects';
 import { scanSessionsInProject } from '@shared/sessions';
 import type {
   AppSettings,
   BranchInfo,
+  MessageEvent,
   ProjectInfo,
   SessionBranchResult,
   SessionSummary,
@@ -26,6 +28,7 @@ interface Cache {
   hookMap: Map<string, string[]>;
   sessionsByProject: Map<string, SessionSummary[]>;
   sessionsById: Map<string, { session: SessionSummary; project: ProjectInfo }>;
+  messagesBySession: Map<string, MessageEvent[]>;
 }
 
 let cache: Cache = {
@@ -33,10 +36,12 @@ let cache: Cache = {
   hookMap: new Map(),
   sessionsByProject: new Map(),
   sessionsById: new Map(),
+  messagesBySession: new Map(),
 };
 const repoCache = new Map<string, RepoEntry>();
 const inflightRepos = new Map<string, Promise<RepoEntry>>();
 const inflightProjectSessions = new Map<string, Promise<SessionSummary[]>>();
+const inflightMessages = new Map<string, Promise<MessageEvent[]>>();
 
 function resetAllCaches(): void {
   cache = {
@@ -44,10 +49,12 @@ function resetAllCaches(): void {
     hookMap: new Map(),
     sessionsByProject: new Map(),
     sessionsById: new Map(),
+    messagesBySession: new Map(),
   };
   repoCache.clear();
   inflightRepos.clear();
   inflightProjectSessions.clear();
+  inflightMessages.clear();
 }
 
 function resetBranchCaches(): void {
@@ -166,6 +173,28 @@ export function registerIpcHandlers(): void {
           : matchByTimestamp(entry.session, repo.branches, settings.branchIconMode);
 
       return { branches, repoPath, repoError: repo.error };
+    },
+  );
+
+  ipcMain.handle(
+    'messages:forSession',
+    async (_e, sessionId: string): Promise<MessageEvent[]> => {
+      const cached = cache.messagesBySession.get(sessionId);
+      if (cached) return cached;
+      const inflight = inflightMessages.get(sessionId);
+      if (inflight) return inflight;
+
+      const entry = cache.sessionsById.get(sessionId);
+      if (!entry) return [];
+
+      const promise = (async () => {
+        const events = await readSessionMessages(entry.session.filePath);
+        cache.messagesBySession.set(sessionId, events);
+        inflightMessages.delete(sessionId);
+        return events;
+      })();
+      inflightMessages.set(sessionId, promise);
+      return promise;
     },
   );
 

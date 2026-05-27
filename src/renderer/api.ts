@@ -1,5 +1,6 @@
 import type {
   AppSettings,
+  MessageEvent,
   ProjectInfo,
   SessionBranchResult,
   SessionSummary,
@@ -9,6 +10,7 @@ export interface RendererApi {
   listProjects: (opts?: { refresh?: boolean }) => Promise<ProjectInfo[]>;
   sessionsForProject: (encodedDirName: string) => Promise<SessionSummary[]>;
   branchesForSession: (sessionId: string) => Promise<SessionBranchResult>;
+  messagesForSession: (sessionId: string) => Promise<MessageEvent[]>;
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>;
   copyResume: (sessionId: string) => Promise<string>;

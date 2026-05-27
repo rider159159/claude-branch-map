@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   AppSettings,
+  MessageEvent,
   ProjectInfo,
   SessionBranchResult,
   SessionSummary,
@@ -13,6 +14,8 @@ const api = {
     ipcRenderer.invoke('sessions:forProject', encodedDirName),
   branchesForSession: (sessionId: string): Promise<SessionBranchResult> =>
     ipcRenderer.invoke('branches:forSession', sessionId),
+  messagesForSession: (sessionId: string): Promise<MessageEvent[]> =>
+    ipcRenderer.invoke('messages:forSession', sessionId),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   setSettings: (patch: Partial<AppSettings>): Promise<AppSettings> =>
     ipcRenderer.invoke('settings:set', patch),

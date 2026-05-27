@@ -9,10 +9,11 @@ export type RowState =
 interface Props {
   sessions: SessionSummary[];
   branchState: Map<string, RowState>;
-  onCopy: (sessionId: string) => void;
+  selectedSessionId: string | null;
+  onSelect: (sessionId: string) => void;
 }
 
-export function SessionList({ sessions, branchState, onCopy }: Props) {
+export function SessionList({ sessions, branchState, selectedSessionId, onSelect }: Props) {
   return (
     <div className="session-list">
       {sessions.map((s) => (
@@ -20,7 +21,8 @@ export function SessionList({ sessions, branchState, onCopy }: Props) {
           key={s.sessionId}
           session={s}
           state={branchState.get(s.sessionId) ?? { status: 'loading' }}
-          onCopy={onCopy}
+          selected={s.sessionId === selectedSessionId}
+          onSelect={onSelect}
         />
       ))}
     </div>

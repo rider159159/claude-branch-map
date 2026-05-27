@@ -12,6 +12,34 @@ export interface SessionSummary {
   lastTs: number;
   messageCount: number;
   filePath: string;
+  model: string | null;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCostUSD: number;
+}
+
+export type ToolBlock =
+  | { kind: 'text'; text: string }
+  | { kind: 'thinking'; text: string }
+  | { kind: 'tool_use'; id: string; name: string; input: unknown }
+  | { kind: 'tool_result'; toolUseId: string; content: unknown; isError: boolean };
+
+export interface MessageEvent {
+  uuid: string;
+  parentUuid: string | null;
+  ts: number | null;
+  role: 'user' | 'assistant';
+  isSidechain: boolean;
+  blocks: ToolBlock[];
+  model: string | null;
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    cacheReadTokens: number;
+    cacheCreationTokens: number;
+  } | null;
+  costUSD: number | null;
+  durationMs: number | null;
 }
 
 export interface ProjectInfo {
