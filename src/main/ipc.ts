@@ -132,15 +132,31 @@ export function registerIpcHandlers(): void {
     async (_e, opts?: { refresh?: boolean }): Promise<ProjectInfo[]> => {
       if (opts?.refresh) resetAllCaches();
       const projects = await loadProjects(opts?.refresh);
-      const { excludeCwdPatterns, hiddenProjects } = getSettings();
+      const { excludeCwdPatterns, hiddenProjects, pinnedProjects } = getSettings();
       const patterns = excludeCwdPatterns.map(normalizePath);
       const hiddenSet = new Set(hiddenProjects);
-      // cwd patterns fully remove projects (they're "filtered out" — never
-      // appear anywhere in the UI). hiddenProjects only marks the flag so the
-      // sidebar can drop them but Settings can still list them for restore.
-      return projects
+      const pinnedSet = new Set(pinnedProjects);
+      // Pin order: settings array order = oldest-first. We want newest-pinned
+      // at the very top, so reverse before assigning a sort rank.
+      const pinRank = new Map<string, number>();
+      [...pinnedProjects].reverse().forEach((id, i) => pinRank.set(id, i));
+
+      const decorated = projects
         .filter((p) => !projectMatchesExcludePattern(p, patterns))
-        .map((p) => (hiddenSet.has(p.encodedDirName) ? { ...p, hidden: true } : p));
+        .map((p) => ({
+          ...p,
+          hidden: hiddenSet.has(p.encodedDirName),
+          pinned: pinnedSet.has(p.encodedDirName),
+        }));
+
+      decorated.sort((a, b) => {
+        if (a.pinned && b.pinned) {
+          return (pinRank.get(a.encodedDirName) ?? 0) - (pinRank.get(b.encodedDirName) ?? 0);
+        }
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        return b.lastModified - a.lastModified;
+      });
+      return decorated;
     },
   );
 
@@ -150,7 +166,51 @@ export function registerIpcHandlers(): void {
       const projects = await loadProjects();
       const project = projects.find((p) => p.encodedDirName === encodedDirName);
       if (!project) return [];
-      return loadProjectSessions(project);
+      const sessions = await loadProjectSessions(project);
+      const { pinnedSessions, hiddenSessions } = getSettings();
+      const pinnedSet = new Set(pinnedSessions);
+      const hiddenSet = new Set(hiddenSessions);
+      const pinRank = new Map<string, number>();
+      [...pinnedSessions].reverse().forEach((id, i) => pinRank.set(id, i));
+
+      const decorated = sessions.map((s) => ({
+        ...s,
+        pinned: pinnedSet.has(s.sessionId),
+        hidden: hiddenSet.has(s.sessionId),
+      }));
+
+      decorated.sort((a, b) => {
+        if (a.pinned && b.pinned) {
+          return (pinRank.get(a.sessionId) ?? 0) - (pinRank.get(b.sessionId) ?? 0);
+        }
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        return b.lastTs - a.lastTs;
+      });
+      // Cache the decorated sessions back so sessionsById lookups (used by
+      // branches:forSession / messages:forSession) see consistent flags.
+      cache.sessionsByProject.set(encodedDirName, decorated);
+      for (const s of decorated) cache.sessionsById.set(s.sessionId, { session: s, project });
+      return decorated;
+    },
+  );
+
+  ipcMain.handle(
+    'sessions:hidden',
+    async (): Promise<SessionSummary[]> => {
+      const { hiddenSessions } = getSettings();
+      if (hiddenSessions.length === 0) return [];
+      const set = new Set(hiddenSessions);
+      // Collect from sessions already cached (any project the user has
+      // visited). Scanning every project on disk just for the Settings panel
+      // would be too expensive; this matches the trade-off used elsewhere.
+      const out: SessionSummary[] = [];
+      for (const list of cache.sessionsByProject.values()) {
+        for (const s of list) {
+          if (set.has(s.sessionId)) out.push({ ...s, hidden: true });
+        }
+      }
+      out.sort((a, b) => b.lastTs - a.lastTs);
+      return out;
     },
   );
 

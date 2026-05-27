@@ -1,7 +1,8 @@
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import type { SessionSummary } from '@shared/types';
 import { absoluteTime, relativeTime, shortenPath } from '../format';
 import { BranchBadge } from './BranchBadge';
+import { HideIcon, PinIcon } from './icons';
 import type { RowState } from './SessionList';
 
 interface Props {
@@ -9,6 +10,8 @@ interface Props {
   state: RowState;
   selected: boolean;
   onSelect: (sessionId: string) => void;
+  onTogglePin: (sessionId: string) => void;
+  onHide: (sessionId: string) => void;
 }
 
 function formatTokens(n: number): string {
@@ -24,7 +27,7 @@ function formatCost(c: number): string {
   return `$${c.toFixed(2)}`;
 }
 
-export function SessionRow({ session, state, selected, onSelect }: Props) {
+export function SessionRow({ session, state, selected, onSelect, onTogglePin, onHide }: Props) {
   const totalTokens = session.totalInputTokens + session.totalOutputTokens;
   const cost = formatCost(session.totalCostUSD);
 
@@ -34,15 +37,40 @@ export function SessionRow({ session, state, selected, onSelect }: Props) {
       onSelect(session.sessionId);
     }
   };
+  const stop = (e: MouseEvent) => e.stopPropagation();
 
   return (
     <article
-      className={`session-row${selected ? ' selected' : ''}`}
+      className={`session-row${selected ? ' selected' : ''}${session.pinned ? ' pinned' : ''}`}
       role="button"
       tabIndex={0}
       onClick={() => onSelect(session.sessionId)}
       onKeyDown={handleKeyDown}
     >
+      <div className="session-actions-mini">
+        <button
+          className={`session-icon-btn${session.pinned ? ' active' : ''}`}
+          onClick={(e) => {
+            stop(e);
+            onTogglePin(session.sessionId);
+          }}
+          aria-label={session.pinned ? 'Unpin session' : 'Pin session'}
+          title={session.pinned ? 'Unpin' : 'Pin to top'}
+        >
+          <PinIcon filled={session.pinned} />
+        </button>
+        <button
+          className="session-icon-btn"
+          onClick={(e) => {
+            stop(e);
+            onHide(session.sessionId);
+          }}
+          aria-label="Hide session"
+          title="Hide (restore in Settings)"
+        >
+          <HideIcon />
+        </button>
+      </div>
       <div className="session-main">
         <h3 className="session-title" title={session.title}>
           {session.title}

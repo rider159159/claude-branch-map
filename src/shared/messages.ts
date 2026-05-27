@@ -11,6 +11,46 @@ const HIDDEN_TYPES = new Set([
   'queue-operation',
 ]);
 
+// IDE / Claude Code injects XML-like wrappers around contextual snippets
+// (cursor selection, opened file, system reminders, etc.). They aren't typed
+// by the user, so they pollute titles and the rendered conversation. We strip
+// them everywhere text leaves the parser.
+const WRAPPER_TAGS = [
+  'ide_selection',
+  'ide_opened_file',
+  'ide_diagnostics',
+  'system-reminder',
+  'local-command-stdout',
+  'local-command-stderr',
+  'command-name',
+  'command-args',
+  'command-message',
+];
+
+const WRAPPER_RE = new RegExp(
+  `<(${WRAPPER_TAGS.join('|')})\\b[^>]*>[\\s\\S]*?<\\/\\1>`,
+  'gi',
+);
+
+const ORPHAN_TAG_RE = new RegExp(
+  `<\\/?(?:${WRAPPER_TAGS.join('|')})\\b[^>]*>`,
+  'gi',
+);
+
+export function stripWrappers(text: string): string {
+  let prev = text;
+  // Run repeatedly until stable — paired removals can expose nested ones.
+  for (let i = 0; i < 4; i++) {
+    const next = prev.replace(WRAPPER_RE, '');
+    if (next === prev) break;
+    prev = next;
+  }
+  return prev
+    .replace(ORPHAN_TAG_RE, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function isObject(v: unknown): v is AnyRecord {
   return typeof v === 'object' && v !== null;
 }
@@ -63,7 +103,8 @@ export function extractBlocks(ev: AnyRecord): ToolBlock[] {
   const blocks: ToolBlock[] = [];
 
   if (typeof content === 'string') {
-    if (content.trim()) blocks.push({ kind: 'text', text: content });
+    const cleaned = stripWrappers(content);
+    if (cleaned) blocks.push({ kind: 'text', text: cleaned });
     // user events may carry tool_result on the wrapper (toolUseResult)
     const tu = isObject(ev.toolUseResult) ? (ev.toolUseResult as AnyRecord) : null;
     if (tu) {
@@ -80,13 +121,15 @@ export function extractBlocks(ev: AnyRecord): ToolBlock[] {
   if (Array.isArray(content)) {
     for (const part of content) {
       if (typeof part === 'string') {
-        if (part.trim()) blocks.push({ kind: 'text', text: part });
+        const cleaned = stripWrappers(part);
+        if (cleaned) blocks.push({ kind: 'text', text: cleaned });
         continue;
       }
       if (!isObject(part)) continue;
       const t = part.type;
       if (t === 'text' && typeof part.text === 'string') {
-        if (part.text.trim()) blocks.push({ kind: 'text', text: part.text });
+        const cleaned = stripWrappers(part.text);
+        if (cleaned) blocks.push({ kind: 'text', text: cleaned });
       } else if (t === 'thinking' && typeof part.thinking === 'string') {
         if (part.thinking.trim()) blocks.push({ kind: 'thinking', text: part.thinking });
       } else if (t === 'tool_use') {

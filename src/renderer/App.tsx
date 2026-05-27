@@ -202,14 +202,97 @@ export function App() {
     [settings, updateHiddenSet],
   );
 
+  const sortProjects = useCallback((list: ProjectInfo[]): ProjectInfo[] => {
+    return [...list].sort((a, b) => {
+      if (a.hidden !== b.hidden) return a.hidden ? 1 : -1;
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return b.lastModified - a.lastModified;
+    });
+  }, []);
+
+  const onTogglePinProject = useCallback(
+    async (encodedDir: string) => {
+      const current = settings?.pinnedProjects ?? [];
+      const isPinned = current.includes(encodedDir);
+      const nextPinned = isPinned
+        ? current.filter((p) => p !== encodedDir)
+        : [...current, encodedDir];
+      const next = await api.setSettings({ pinnedProjects: nextPinned });
+      setSettings(next);
+      setProjects((prev) => {
+        const pinSet = new Set(next.pinnedProjects);
+        return sortProjects(prev.map((p) => ({ ...p, pinned: pinSet.has(p.encodedDirName) })));
+      });
+    },
+    [settings, sortProjects],
+  );
+
+  const sortSessions = useCallback((list: SessionSummary[]): SessionSummary[] => {
+    return [...list].sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return b.lastTs - a.lastTs;
+    });
+  }, []);
+
+  const onTogglePinSession = useCallback(
+    async (sessionId: string) => {
+      const current = settings?.pinnedSessions ?? [];
+      const isPinned = current.includes(sessionId);
+      const nextPinned = isPinned
+        ? current.filter((p) => p !== sessionId)
+        : [...current, sessionId];
+      const next = await api.setSettings({ pinnedSessions: nextPinned });
+      setSettings(next);
+      setSessions((prev) => {
+        const pinSet = new Set(next.pinnedSessions);
+        return sortSessions(prev.map((s) => ({ ...s, pinned: pinSet.has(s.sessionId) })));
+      });
+    },
+    [settings, sortSessions],
+  );
+
+  const onHideSession = useCallback(
+    async (sessionId: string) => {
+      const current = settings?.hiddenSessions ?? [];
+      if (current.includes(sessionId)) return;
+      const next = await api.setSettings({ hiddenSessions: [...current, sessionId] });
+      setSettings(next);
+      setSessions((prev) =>
+        prev.map((s) => (s.sessionId === sessionId ? { ...s, hidden: true } : s)),
+      );
+      if (selectedSessionId === sessionId) setSelectedSessionId(null);
+    },
+    [settings, selectedSessionId],
+  );
+
+  const onShowSession = useCallback(
+    async (sessionId: string) => {
+      const current = settings?.hiddenSessions ?? [];
+      if (!current.includes(sessionId)) return;
+      const next = await api.setSettings({
+        hiddenSessions: current.filter((s) => s !== sessionId),
+      });
+      setSettings(next);
+      setSessions((prev) =>
+        prev.map((s) => (s.sessionId === sessionId ? { ...s, hidden: false } : s)),
+      );
+    },
+    [settings],
+  );
+
   const onSettingsChange = useCallback(
     async (patch: Partial<AppSettings>) => {
       const next = await api.setSettings(patch);
       setSettings(next);
-      // hiddenProjects toggles are handled by their own helpers above; for
-      // everything else we re-pull because the change may affect which
-      // projects pass the cwd filter or which branches get returned.
-      if (!('hiddenProjects' in patch)) {
+      // pin/hide toggles are handled by their own helpers above; for everything
+      // else we re-pull because the change may affect which projects pass the
+      // cwd filter or which branches get returned.
+      const skipReload =
+        'hiddenProjects' in patch ||
+        'pinnedProjects' in patch ||
+        'pinnedSessions' in patch ||
+        'hiddenSessions' in patch;
+      if (!skipReload) {
         await loadProjects({ preferDir: selectedDir });
       }
     },
@@ -253,6 +336,7 @@ export function App() {
           hiddenProjects={hiddenProjectsList}
           onChange={onSettingsChange}
           onShowProject={onShowProject}
+          onShowSession={onShowSession}
         />
       )}
 
@@ -262,6 +346,7 @@ export function App() {
           selectedEncodedDir={selectedDir}
           onSelect={onSelectProject}
           onHide={onHideProject}
+          onTogglePin={onTogglePinProject}
           loading={loadingProjects}
         />
         <aside className="session-pane">
@@ -286,6 +371,8 @@ export function App() {
               branchState={branchState}
               selectedSessionId={selectedSessionId}
               onSelect={setSelectedSessionId}
+              onTogglePinSession={onTogglePinSession}
+              onHideSession={onHideSession}
             />
           </div>
         </aside>

@@ -182,6 +182,7 @@ export async function scanProjects(): Promise<ProjectInfo[]> {
         sessionCount: jsonlFiles.length,
         lastModified,
         hidden: false,
+        pinned: false,
       };
     }),
   );

@@ -16,6 +16,7 @@ const api = {
     ipcRenderer.invoke('branches:forSession', sessionId),
   messagesForSession: (sessionId: string): Promise<MessageEvent[]> =>
     ipcRenderer.invoke('messages:forSession', sessionId),
+  hiddenSessions: (): Promise<SessionSummary[]> => ipcRenderer.invoke('sessions:hidden'),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   setSettings: (patch: Partial<AppSettings>): Promise<AppSettings> =>
     ipcRenderer.invoke('settings:set', patch),

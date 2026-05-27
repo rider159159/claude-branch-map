@@ -11,6 +11,7 @@ export interface RendererApi {
   sessionsForProject: (encodedDirName: string) => Promise<SessionSummary[]>;
   branchesForSession: (sessionId: string) => Promise<SessionBranchResult>;
   messagesForSession: (sessionId: string) => Promise<MessageEvent[]>;
+  hiddenSessions: () => Promise<SessionSummary[]>;
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>;
   copyResume: (sessionId: string) => Promise<string>;

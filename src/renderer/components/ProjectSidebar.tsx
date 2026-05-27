@@ -1,12 +1,14 @@
 import type { MouseEvent } from 'react';
 import type { ProjectInfo } from '@shared/types';
 import { relativeTime, shortenPath } from '../format';
+import { HideIcon, PinIcon } from './icons';
 
 interface Props {
   projects: ProjectInfo[];
   selectedEncodedDir: string | null;
   onSelect: (encodedDir: string) => void;
   onHide: (encodedDir: string) => void;
+  onTogglePin: (encodedDir: string) => void;
   loading: boolean;
 }
 
@@ -15,6 +17,7 @@ export function ProjectSidebar({
   selectedEncodedDir,
   onSelect,
   onHide,
+  onTogglePin,
   loading,
 }: Props) {
   return (
@@ -36,14 +39,11 @@ export function ProjectSidebar({
         )}
         {projects.map((p) => {
           const selected = p.encodedDirName === selectedEncodedDir;
-          const handleHide = (e: MouseEvent) => {
-            e.stopPropagation();
-            onHide(p.encodedDirName);
-          };
+          const stop = (e: MouseEvent) => e.stopPropagation();
           return (
             <div
               key={p.encodedDirName}
-              className={`project-item${selected ? ' selected' : ''}`}
+              className={`project-item${selected ? ' selected' : ''}${p.pinned ? ' pinned' : ''}`}
               onClick={() => onSelect(p.encodedDirName)}
               title={p.actualPath}
               role="button"
@@ -64,14 +64,30 @@ export function ProjectSidebar({
                   <span>{relativeTime(p.lastModified)}</span>
                 </div>
               </div>
-              <button
-                className="project-hide-btn"
-                onClick={handleHide}
-                aria-label={`Hide ${p.displayName}`}
-                title="Hide from sidebar (restore in Settings)"
-              >
-                <EyeOffIcon />
-              </button>
+              <div className="project-actions">
+                <button
+                  className={`project-icon-btn${p.pinned ? ' active' : ''}`}
+                  onClick={(e) => {
+                    stop(e);
+                    onTogglePin(p.encodedDirName);
+                  }}
+                  aria-label={p.pinned ? `Unpin ${p.displayName}` : `Pin ${p.displayName}`}
+                  title={p.pinned ? 'Unpin' : 'Pin to top'}
+                >
+                  <PinIcon filled={p.pinned} />
+                </button>
+                <button
+                  className="project-icon-btn"
+                  onClick={(e) => {
+                    stop(e);
+                    onHide(p.encodedDirName);
+                  }}
+                  aria-label={`Hide ${p.displayName}`}
+                  title="Hide from sidebar (restore in Settings)"
+                >
+                  <HideIcon />
+                </button>
+              </div>
             </div>
           );
         })}
@@ -88,26 +104,5 @@ function ProjectSkeleton() {
         <div className="project-skeleton-line short skeleton-shimmer" />
       </div>
     </div>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-      <line x1="2" y1="2" x2="22" y2="22" />
-    </svg>
   );
 }

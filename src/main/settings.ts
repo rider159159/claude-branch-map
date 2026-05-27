@@ -23,7 +23,25 @@ export function getSettings(): AppSettings {
     branchIconMode: store.get('branchIconMode', 'created') as BranchIconMode,
     excludeCwdPatterns: readStringArray('excludeCwdPatterns', DEFAULT_EXCLUDE_CWD_PATTERNS),
     hiddenProjects: readStringArray('hiddenProjects', []),
+    pinnedProjects: readStringArray('pinnedProjects', []),
+    pinnedSessions: readStringArray('pinnedSessions', []),
+    hiddenSessions: readStringArray('hiddenSessions', []),
   };
+}
+
+function uniqStrings(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  // Preserve first-seen order so pin order is meaningful (most recently pinned
+  // ends up at array tail; the IPC layer reverses for "newest pin on top").
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of list) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return out;
 }
 
 export function updateSettings(patch: Partial<AppSettings>): AppSettings {
@@ -42,15 +60,16 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
     );
   }
   if ('hiddenProjects' in patch && Array.isArray(patch.hiddenProjects)) {
-    // De-dupe + drop empties so repeated hides don't bloat the list.
-    const uniq = Array.from(
-      new Set(
-        patch.hiddenProjects
-          .map((p) => (typeof p === 'string' ? p.trim() : ''))
-          .filter((p) => p.length > 0),
-      ),
-    );
-    store.set('hiddenProjects', uniq);
+    store.set('hiddenProjects', uniqStrings(patch.hiddenProjects));
+  }
+  if ('pinnedProjects' in patch && Array.isArray(patch.pinnedProjects)) {
+    store.set('pinnedProjects', uniqStrings(patch.pinnedProjects));
+  }
+  if ('pinnedSessions' in patch && Array.isArray(patch.pinnedSessions)) {
+    store.set('pinnedSessions', uniqStrings(patch.pinnedSessions));
+  }
+  if ('hiddenSessions' in patch && Array.isArray(patch.hiddenSessions)) {
+    store.set('hiddenSessions', uniqStrings(patch.hiddenSessions));
   }
   return getSettings();
 }

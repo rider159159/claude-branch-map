@@ -126,6 +126,8 @@ async function parseSessionFile(filePath: string, fallbackCwd: string): Promise<
     totalInputTokens,
     totalOutputTokens,
     totalCostUSD,
+    pinned: false,
+    hidden: false,
   };
 }
 

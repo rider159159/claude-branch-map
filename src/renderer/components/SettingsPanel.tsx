@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AppSettings, BranchIconMode, ProjectInfo } from '@shared/types';
+import type { AppSettings, BranchIconMode, ProjectInfo, SessionSummary } from '@shared/types';
 import { api } from '../api';
 import { shortenPath } from '../format';
 
@@ -8,9 +8,27 @@ interface Props {
   hiddenProjects: ProjectInfo[];
   onChange: (patch: Partial<AppSettings>) => void;
   onShowProject: (encodedDirName: string) => void;
+  onShowSession: (sessionId: string) => void;
 }
 
-export function SettingsPanel({ settings, hiddenProjects, onChange, onShowProject }: Props) {
+export function SettingsPanel({
+  settings,
+  hiddenProjects,
+  onChange,
+  onShowProject,
+  onShowSession,
+}: Props) {
+  const [hiddenSessions, setHiddenSessions] = useState<SessionSummary[]>([]);
+  useEffect(() => {
+    let alive = true;
+    api.hiddenSessions().then((list) => {
+      if (alive) setHiddenSessions(list);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [settings.hiddenSessions]);
+
   const [excludeText, setExcludeText] = useState(() =>
     settings.excludeCwdPatterns.join('\n'),
   );
@@ -119,6 +137,40 @@ export function SettingsPanel({ settings, hiddenProjects, onChange, onShowProjec
                     className="ghost"
                     onClick={() => onShowProject(p.encodedDirName)}
                   >
+                    Show
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <span className="settings-hint">
+            Hiding only affects this UI — jsonl files on disk are untouched.
+          </span>
+        </div>
+      </div>
+      <div className="settings-row settings-row-top">
+        <label className="settings-label">Hidden sessions</label>
+        <div className="settings-control settings-control-col">
+          {settings.hiddenSessions.length === 0 ? (
+            <span className="settings-hint">
+              No hidden sessions. Click the eye-off icon on a session to hide it.
+            </span>
+          ) : hiddenSessions.length === 0 ? (
+            <span className="settings-hint">
+              {settings.hiddenSessions.length} hidden session(s). Open their project once
+              to surface them here for restore.
+            </span>
+          ) : (
+            <ul className="hidden-projects">
+              {hiddenSessions.map((s) => (
+                <li key={s.sessionId} className="hidden-project-item">
+                  <div className="hidden-project-info">
+                    <span className="hidden-project-name">{s.title}</span>
+                    <span className="hidden-project-path" title={s.cwd}>
+                      {shortenPath(s.cwd, 4)} · {s.sessionId.slice(0, 8)}
+                    </span>
+                  </div>
+                  <button className="ghost" onClick={() => onShowSession(s.sessionId)}>
                     Show
                   </button>
                 </li>

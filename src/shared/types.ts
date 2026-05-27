@@ -16,6 +16,8 @@ export interface SessionSummary {
   totalInputTokens: number;
   totalOutputTokens: number;
   totalCostUSD: number;
+  pinned: boolean;
+  hidden: boolean;
 }
 
 export type ToolBlock =
@@ -49,6 +51,7 @@ export interface ProjectInfo {
   sessionCount: number;
   lastModified: number;     // ms epoch — newest jsonl mtime
   hidden: boolean;          // user toggled hide on this project (persists)
+  pinned: boolean;          // user pinned this project to the top (persists)
 }
 
 export interface BranchInfo {
@@ -83,6 +86,9 @@ export interface AppSettings {
   branchIconMode: BranchIconMode;
   excludeCwdPatterns: string[];
   hiddenProjects: string[];   // encodedDirName values that the user manually hid
+  pinnedProjects: string[];   // encodedDirName values, order = pin order
+  pinnedSessions: string[];   // sessionId values, order = pin order
+  hiddenSessions: string[];   // sessionId values
 }
 
 export const DEFAULT_EXCLUDE_CWD_PATTERNS = [
@@ -94,4 +100,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   branchIconMode: 'created',
   excludeCwdPatterns: DEFAULT_EXCLUDE_CWD_PATTERNS,
   hiddenProjects: [],
+  pinnedProjects: [],
+  pinnedSessions: [],
+  hiddenSessions: [],
 };
