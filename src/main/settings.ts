@@ -26,6 +26,15 @@ export function getSettings(): AppSettings {
     pinnedProjects: readStringArray('pinnedProjects', []),
     pinnedSessions: readStringArray('pinnedSessions', []),
     hiddenSessions: readStringArray('hiddenSessions', []),
+    vscodeResumeUriTemplate: store.get(
+      'vscodeResumeUriTemplate',
+      DEFAULT_SETTINGS.vscodeResumeUriTemplate,
+    ),
+    openWorkspaceBeforeResume: store.get(
+      'openWorkspaceBeforeResume',
+      DEFAULT_SETTINGS.openWorkspaceBeforeResume,
+    ),
+    vscodeOpenDelayMs: store.get('vscodeOpenDelayMs', DEFAULT_SETTINGS.vscodeOpenDelayMs),
   };
 }
 
@@ -70,6 +79,15 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   }
   if ('hiddenSessions' in patch && Array.isArray(patch.hiddenSessions)) {
     store.set('hiddenSessions', uniqStrings(patch.hiddenSessions));
+  }
+  if ('vscodeResumeUriTemplate' in patch && typeof patch.vscodeResumeUriTemplate === 'string') {
+    store.set('vscodeResumeUriTemplate', patch.vscodeResumeUriTemplate.trim());
+  }
+  if ('openWorkspaceBeforeResume' in patch && typeof patch.openWorkspaceBeforeResume === 'boolean') {
+    store.set('openWorkspaceBeforeResume', patch.openWorkspaceBeforeResume);
+  }
+  if ('vscodeOpenDelayMs' in patch && typeof patch.vscodeOpenDelayMs === 'number') {
+    store.set('vscodeOpenDelayMs', Math.max(0, Math.floor(patch.vscodeOpenDelayMs)));
   }
   return getSettings();
 }

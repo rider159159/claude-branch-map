@@ -1,6 +1,7 @@
 import type {
   AppSettings,
   MessageEvent,
+  OpenInVscodeResult,
   ProjectInfo,
   SessionBranchResult,
   SessionSummary,
@@ -15,6 +16,7 @@ export interface RendererApi {
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>;
   copyResume: (sessionId: string) => Promise<string>;
+  openInVscode: (sessionId: string) => Promise<OpenInVscodeResult>;
   pickRepo: () => Promise<string | null>;
   openExternal: (url: string) => Promise<void>;
 }

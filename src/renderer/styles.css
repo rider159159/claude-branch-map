@@ -100,6 +100,31 @@ button.ghost { background: var(--bg-row); }
   padding: 6px 10px;
 }
 .settings-textarea:focus { outline: none; border-color: var(--accent); }
+.settings-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  max-width: 520px;
+  background: var(--bg-row);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.settings-input:focus { outline: none; border-color: var(--accent); }
+.settings-checkbox {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-dim); font-size: 13px;
+}
+.settings-number {
+  width: 80px;
+  background: var(--bg-row);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.settings-number:focus { outline: none; border-color: var(--accent); }
 .settings-hint { color: var(--text-mute); font-size: 11px; max-width: 520px; }
 
 .hidden-projects {

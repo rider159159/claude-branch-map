@@ -81,6 +81,11 @@ export interface SessionBranchResult {
   repoError?: string;
 }
 
+export interface OpenInVscodeResult {
+  ok: boolean;
+  error?: string;
+}
+
 export interface AppSettings {
   repoPathOverride: string | null;
   branchIconMode: BranchIconMode;
@@ -89,6 +94,9 @@ export interface AppSettings {
   pinnedProjects: string[];   // encodedDirName values, order = pin order
   pinnedSessions: string[];   // sessionId values, order = pin order
   hiddenSessions: string[];   // sessionId values
+  vscodeResumeUriTemplate: string;     // {sessionId} 佔位,best-effort 的 VS Code deep link
+  openWorkspaceBeforeResume: boolean;  // 觸發 URI 前先 `code <cwd>` 開啟工作資料夾
+  vscodeOpenDelayMs: number;           // 開資料夾與觸發 URI 之間的延遲(ms)
 }
 
 export const DEFAULT_EXCLUDE_CWD_PATTERNS = [
@@ -103,4 +111,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   pinnedProjects: [],
   pinnedSessions: [],
   hiddenSessions: [],
+  vscodeResumeUriTemplate: 'vscode://anthropic.claude-code/open?session={sessionId}',
+  openWorkspaceBeforeResume: true,
+  vscodeOpenDelayMs: 1500,
 };

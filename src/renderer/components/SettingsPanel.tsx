@@ -37,6 +37,18 @@ export function SettingsPanel({
     setExcludeText(settings.excludeCwdPatterns.join('\n'));
   }, [settings.excludeCwdPatterns]);
 
+  const [uriTemplate, setUriTemplate] = useState(settings.vscodeResumeUriTemplate);
+  useEffect(() => {
+    setUriTemplate(settings.vscodeResumeUriTemplate);
+  }, [settings.vscodeResumeUriTemplate]);
+
+  const commitUriTemplate = useCallback(() => {
+    const next = uriTemplate.trim();
+    if (next && next !== settings.vscodeResumeUriTemplate) {
+      onChange({ vscodeResumeUriTemplate: next });
+    }
+  }, [uriTemplate, settings.vscodeResumeUriTemplate, onChange]);
+
   const pickRepo = useCallback(async () => {
     const path = await api.pickRepo();
     if (path) onChange({ repoPathOverride: path });
@@ -113,6 +125,51 @@ export function SettingsPanel({
           />
           <span className="settings-hint">
             每行一個子字串。cwd 包含任一行的對話將被隱藏。點擊外部以套用。
+          </span>
+        </div>
+      </div>
+      <div className="settings-row settings-row-top">
+        <label className="settings-label" htmlFor="vscode-uri-template">
+          VS Code 繼續對話
+        </label>
+        <div className="settings-control settings-control-col">
+          <label className="settings-checkbox">
+            <input
+              type="checkbox"
+              checked={settings.openWorkspaceBeforeResume}
+              onChange={(e) =>
+                onChange({ openWorkspaceBeforeResume: e.target.checked })
+              }
+            />
+            繼續對話前先用 code 開啟工作資料夾
+          </label>
+          <input
+            id="vscode-uri-template"
+            className="settings-input"
+            type="text"
+            value={uriTemplate}
+            onChange={(e) => setUriTemplate(e.target.value)}
+            onBlur={commitUriTemplate}
+            placeholder="vscode://anthropic.claude-code/open?session={sessionId}"
+            spellCheck={false}
+          />
+          <label className="settings-checkbox">
+            開啟資料夾後等待
+            <input
+              type="number"
+              className="settings-number"
+              min={0}
+              step={100}
+              value={settings.vscodeOpenDelayMs}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                if (Number.isFinite(n)) onChange({ vscodeOpenDelayMs: n });
+              }}
+            />
+            ms 再觸發 deep link
+          </label>
+          <span className="settings-hint">
+            URI 樣板的 {'{sessionId}'} 會被代換成對話 ID。deep link 需 VS Code 已開啟對應工作區才能 resume,否則會開新對話。失敗時自動改為複製 resume 指令。
           </span>
         </div>
       </div>

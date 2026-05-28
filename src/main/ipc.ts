@@ -16,7 +16,7 @@ import type {
   SessionSummary,
 } from '@shared/types';
 import { getSettings, updateSettings } from './settings';
-import { copyResumeCommand } from './resume';
+import { copyResumeCommand, openInVscode } from './resume';
 
 interface RepoEntry {
   branches: BranchInfo[];
@@ -271,6 +271,23 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('resume:copy', (_e, sessionId: string) => {
     return copyResumeCommand(sessionId);
+  });
+
+  ipcMain.handle('resume:openInVscode', async (_e, sessionId: string) => {
+    const entry = cache.sessionsById.get(sessionId);
+    const settings = getSettings();
+    // 與 branches:forSession 相同的 cwd 解析:repo override 優先,其次 session
+    // 本身的 cwd,最後退回專案實際路徑。
+    const cwd = entry
+      ? settings.repoPathOverride ?? entry.session.cwd ?? entry.project.actualPath
+      : null;
+    return openInVscode({
+      sessionId,
+      cwd,
+      uriTemplate: settings.vscodeResumeUriTemplate,
+      openWorkspaceBeforeResume: settings.openWorkspaceBeforeResume,
+      delayMs: settings.vscodeOpenDelayMs,
+    });
   });
 
   ipcMain.handle('repo:pick', async () => {

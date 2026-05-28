@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   AppSettings,
   MessageEvent,
+  OpenInVscodeResult,
   ProjectInfo,
   SessionBranchResult,
   SessionSummary,
@@ -22,6 +23,8 @@ const api = {
     ipcRenderer.invoke('settings:set', patch),
   copyResume: (sessionId: string): Promise<string> =>
     ipcRenderer.invoke('resume:copy', sessionId),
+  openInVscode: (sessionId: string): Promise<OpenInVscodeResult> =>
+    ipcRenderer.invoke('resume:openInVscode', sessionId),
   pickRepo: (): Promise<string | null> => ipcRenderer.invoke('repo:pick'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
 };

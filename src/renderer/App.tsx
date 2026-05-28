@@ -291,7 +291,10 @@ export function App() {
         'hiddenProjects' in patch ||
         'pinnedProjects' in patch ||
         'pinnedSessions' in patch ||
-        'hiddenSessions' in patch;
+        'hiddenSessions' in patch ||
+        'vscodeResumeUriTemplate' in patch ||
+        'openWorkspaceBeforeResume' in patch ||
+        'vscodeOpenDelayMs' in patch;
       if (!skipReload) {
         await loadProjects({ preferDir: selectedDir });
       }
@@ -302,6 +305,16 @@ export function App() {
   const onCopy = useCallback(async (sessionId: string) => {
     const cmd = await api.copyResume(sessionId);
     setToast(`已複製:${cmd}`);
+  }, []);
+
+  const onOpenInVscode = useCallback(async (sessionId: string) => {
+    const result = await api.openInVscode(sessionId);
+    if (result.ok) {
+      setToast('已在 VS Code 開啟對話,請稍候 VS Code 載入。');
+    } else {
+      const cmd = await api.copyResume(sessionId);
+      setToast(`VS Code 開啟失敗,已改為複製 resume 指令:${cmd}`);
+    }
   }, []);
 
   const selectedProject = visibleProjects.find((p) => p.encodedDirName === selectedDir) ?? null;
@@ -381,6 +394,7 @@ export function App() {
             session={selectedSession}
             branchState={selectedBranchState}
             onCopy={onCopy}
+            onOpenInVscode={onOpenInVscode}
           />
         </main>
       </div>
