@@ -14,10 +14,17 @@ win:
       arch:
         - x64
   artifactName: ClaudeBranchMap-Setup-${version}.exe
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  artifactName: ClaudeBranchMap-${version}-arm64.dmg
+  category: public.app-category.developer-tools
 nsis:
   oneClick: false
   perMachine: false
-  allowToChangeInstallDir: true
+  allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Claude Branch Map
