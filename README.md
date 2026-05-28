@@ -81,6 +81,19 @@ Claude Branch Map 掃描全部本機 session，為每個 session 標出對應的
 
 簽章會在工具於實際使用中驗證後納入計畫。
 
+### 下載安裝檔（macOS，Apple Silicon）
+
+到 [Releases](https://github.com/rider159159/claude-branch-map/releases) 下載 `ClaudeBranchMap-<version>-arm64.dmg`，適用所有 M 系列晶片（M1／M2／M3／M4）。Intel Mac 不支援。
+
+DMG 同樣**未做程式碼簽章與公證（notarization）**，首次開啟會被 Gatekeeper 擋下，可能顯示「無法打開」或「應用程式已損毀」。安裝方式：
+
+1. 掛載 DMG，把 **Claude Branch Map.app** 拖進「應用程式」資料夾。
+2. 若被擋，在終端機移除 quarantine 屬性後即可開啟：
+
+   ```bash
+   xattr -dr com.apple.quarantine "/Applications/Claude Branch Map.app"
+   ```
+
 ## 從原始碼建置
 
 需求：Node.js 與 npm。
@@ -93,6 +106,7 @@ npm install
 npm run dev          # 啟動 Electron 視窗 + 熱重載
 npm run build        # 型別檢查 + 打包 main / preload / renderer 至 out/
 npm run package:win  # 打包並產生 Windows NSIS 安裝檔至 dist/
+npm run package:mac  # 打包並產生 macOS arm64 DMG 至 dist/
 ```
 
 | 指令 | 說明 |
@@ -101,6 +115,7 @@ npm run package:win  # 打包並產生 Windows NSIS 安裝檔至 dist/
 | `npm run build` | TypeScript 型別檢查 + 打包至 `out/` |
 | `npm run preview` / `npm run start` | 預覽打包結果 |
 | `npm run package:win` | build 後用 `electron-builder` 產生 Windows x64 NSIS 安裝檔 |
+| `npm run package:mac` | build 後用 `electron-builder` 產生 macOS arm64 DMG |
 | `npm run package:dir` | 產出未打包的 dir 版本（供 smoke test） |
 
 ## Hook 整合（選用，建議）
@@ -118,6 +133,27 @@ powershell -ExecutionPolicy Bypass -File scripts\install-hook.ps1
 安裝器會把 `scripts/branch-hook.*` 複製到 `~/.claude/hooks/`，並 merge 一筆 PostToolUse 進 `~/.claude/settings.json`。既有設定保持不動，重複執行安全。
 
 安裝後，每次 tool call 結束時 hook 會把 `{sessionId, branch, timestamp}` append 進 `~/.claude/branch-hook.jsonl`，作為高信心對應來源。
+
+### 移除 hook
+
+```bash
+# macOS / Linux
+bash scripts/uninstall-hook.sh             # 移除 hook 與腳本，保留紀錄檔
+bash scripts/uninstall-hook.sh --purge-log # 連同 branch-hook.jsonl 一併刪除
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\uninstall-hook.ps1
+powershell -ExecutionPolicy Bypass -File scripts\uninstall-hook.ps1 -PurgeLog
+```
+
+反安裝器只移除本工具註冊的那筆 PostToolUse（其他既有設定不動），並刪除 `~/.claude/hooks/branch-hook.*`。重複執行安全。
+
+### 完整移除 app（macOS）
+
+```bash
+rm -rf "/Applications/Claude Branch Map.app"
+rm -rf ~/Library/Application\ Support/claude-branch-map  # electron-store 設定
+```
 
 ## 分支匹配原理
 
@@ -142,7 +178,7 @@ powershell -ExecutionPolicy Bypass -File scripts\install-hook.ps1
 ## 限制
 
 - 接續 Claude 對話只適用於同一台機器上的 CLI session。Claude 桌面 / 行動 / 網頁版使用不同的 session 格式，無法用 `claude --resume` 接續。
-- 此版本只產 Windows 安裝檔。程式碼與平台無關，但 `electron-builder.yml` 目前只接上 Windows x64 NSIS。
+- 安裝檔提供 Windows x64（NSIS）與 macOS arm64（DMG）。Apple Silicon 以外的平台（如 Intel Mac、Linux）需自行從原始碼建置。
 
 ## 專案結構
 
