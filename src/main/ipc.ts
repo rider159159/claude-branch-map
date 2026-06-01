@@ -15,7 +15,7 @@ import type {
   SessionBranchResult,
   SessionSummary,
 } from '@shared/types';
-import { getSettings, updateSettings } from './settings';
+import { getSettings, setSessionNote, updateSettings } from './settings';
 import { copyResumeCommand, openInVscode } from './resume';
 
 interface RepoEntry {
@@ -167,17 +167,22 @@ export function registerIpcHandlers(): void {
       const project = projects.find((p) => p.encodedDirName === encodedDirName);
       if (!project) return [];
       const sessions = await loadProjectSessions(project);
-      const { pinnedSessions, hiddenSessions } = getSettings();
+      const { pinnedSessions, hiddenSessions, sessionNotes } = getSettings();
       const pinnedSet = new Set(pinnedSessions);
       const hiddenSet = new Set(hiddenSessions);
       const pinRank = new Map<string, number>();
       [...pinnedSessions].reverse().forEach((id, i) => pinRank.set(id, i));
 
-      const decorated = sessions.map((s) => ({
-        ...s,
-        pinned: pinnedSet.has(s.sessionId),
-        hidden: hiddenSet.has(s.sessionId),
-      }));
+      const decorated = sessions.map((s) => {
+        const note = sessionNotes[s.sessionId];
+        return {
+          ...s,
+          pinned: pinnedSet.has(s.sessionId),
+          hidden: hiddenSet.has(s.sessionId),
+          customTitle: note?.title ?? '',
+          tags: note?.tags ?? [],
+        };
+      });
 
       decorated.sort((a, b) => {
         if (a.pinned && b.pinned) {
@@ -197,16 +202,21 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(
     'sessions:hidden',
     async (): Promise<SessionSummary[]> => {
-      const { hiddenSessions } = getSettings();
+      const { hiddenSessions, sessionNotes } = getSettings();
       if (hiddenSessions.length === 0) return [];
       const set = new Set(hiddenSessions);
-      // Collect from sessions already cached (any project the user has
-      // visited). Scanning every project on disk just for the Settings panel
-      // would be too expensive; this matches the trade-off used elsewhere.
       const out: SessionSummary[] = [];
       for (const list of cache.sessionsByProject.values()) {
         for (const s of list) {
-          if (set.has(s.sessionId)) out.push({ ...s, hidden: true });
+          if (set.has(s.sessionId)) {
+            const note = sessionNotes[s.sessionId];
+            out.push({
+              ...s,
+              hidden: true,
+              customTitle: note?.title ?? '',
+              tags: note?.tags ?? [],
+            });
+          }
         }
       }
       out.sort((a, b) => b.lastTs - a.lastTs);
@@ -268,6 +278,13 @@ export function registerIpcHandlers(): void {
     resetBranchCaches();
     return next;
   });
+
+  ipcMain.handle(
+    'sessionNotes:set',
+    (_e, sessionId: string, patch: { title?: string; tags?: string[] } | null) => {
+      return setSessionNote(sessionId, patch);
+    },
+  );
 
   ipcMain.handle('resume:copy', (_e, sessionId: string) => {
     return copyResumeCommand(sessionId);

@@ -32,6 +32,25 @@ export function PinIcon({ filled = false }: { filled?: boolean }) {
   );
 }
 
+export function EditIcon() {
+  return (
+    <svg
+      style={iconStyle}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M14.5 3.5l6 6L8 22H2v-6L14.5 3.5z" />
+      <path d="M13 5l6 6" />
+    </svg>
+  );
+}
+
 export function HideIcon() {
   return (
     <svg

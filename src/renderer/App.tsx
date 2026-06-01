@@ -292,6 +292,7 @@ export function App() {
         'pinnedProjects' in patch ||
         'pinnedSessions' in patch ||
         'hiddenSessions' in patch ||
+        'sessionNotes' in patch ||
         'vscodeResumeUriTemplate' in patch ||
         'openWorkspaceBeforeResume' in patch ||
         'vscodeOpenDelayMs' in patch;
@@ -300,6 +301,25 @@ export function App() {
       }
     },
     [loadProjects, selectedDir],
+  );
+
+  const onSaveSessionNote = useCallback(
+    async (
+      sessionId: string,
+      patch: { title?: string; tags?: string[] } | null,
+    ) => {
+      const next = await api.setSessionNote(sessionId, patch);
+      setSettings(next);
+      const note = next.sessionNotes[sessionId];
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.sessionId === sessionId
+            ? { ...s, customTitle: note?.title ?? '', tags: note?.tags ?? [] }
+            : s,
+        ),
+      );
+    },
+    [],
   );
 
   const onCopy = useCallback(async (sessionId: string) => {
@@ -386,6 +406,7 @@ export function App() {
               onSelect={setSelectedSessionId}
               onTogglePinSession={onTogglePinSession}
               onHideSession={onHideSession}
+              onSaveNote={onSaveSessionNote}
             />
           </div>
         </aside>

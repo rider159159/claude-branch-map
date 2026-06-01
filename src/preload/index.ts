@@ -18,6 +18,10 @@ const api = {
   messagesForSession: (sessionId: string): Promise<MessageEvent[]> =>
     ipcRenderer.invoke('messages:forSession', sessionId),
   hiddenSessions: (): Promise<SessionSummary[]> => ipcRenderer.invoke('sessions:hidden'),
+  setSessionNote: (
+    sessionId: string,
+    patch: { title?: string; tags?: string[] } | null,
+  ): Promise<AppSettings> => ipcRenderer.invoke('sessionNotes:set', sessionId, patch),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   setSettings: (patch: Partial<AppSettings>): Promise<AppSettings> =>
     ipcRenderer.invoke('settings:set', patch),

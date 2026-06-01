@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import type { SessionSummary } from '@shared/types';
 import { absoluteTime, relativeTime, shortenPath } from '../format';
 import { BranchBadge } from './BranchBadge';
-import { HideIcon, PinIcon } from './icons';
+import { EditIcon, HideIcon, PinIcon } from './icons';
 import type { RowState } from './SessionList';
 
 interface Props {
@@ -12,6 +13,10 @@ interface Props {
   onSelect: (sessionId: string) => void;
   onTogglePin: (sessionId: string) => void;
   onHide: (sessionId: string) => void;
+  onSaveNote: (
+    sessionId: string,
+    patch: { title?: string; tags?: string[] } | null,
+  ) => Promise<void> | void;
 }
 
 function formatTokens(n: number): string {
@@ -27,11 +32,49 @@ function formatCost(c: number): string {
   return `$${c.toFixed(2)}`;
 }
 
-export function SessionRow({ session, state, selected, onSelect, onTogglePin, onHide }: Props) {
+function parseTagInput(input: string): string[] {
+  return Array.from(
+    new Set(
+      input
+        .split(/[,\s]+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0),
+    ),
+  );
+}
+
+export function SessionRow({
+  session,
+  state,
+  selected,
+  onSelect,
+  onTogglePin,
+  onHide,
+  onSaveNote,
+}: Props) {
   const totalTokens = session.totalInputTokens + session.totalOutputTokens;
   const cost = formatCost(session.totalCostUSD);
+  const displayTitle = session.customTitle || session.title;
+
+  const [editing, setEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(session.customTitle);
+  const [tagsDraft, setTagsDraft] = useState(session.tags.join(' '));
+  const [saving, setSaving] = useState(false);
+  const titleRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!editing) {
+      setTitleDraft(session.customTitle);
+      setTagsDraft(session.tags.join(' '));
+    }
+  }, [session.customTitle, session.tags, editing]);
+
+  useEffect(() => {
+    if (editing) titleRef.current?.focus();
+  }, [editing]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    if (editing) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onSelect(session.sessionId);
@@ -39,15 +82,64 @@ export function SessionRow({ session, state, selected, onSelect, onTogglePin, on
   };
   const stop = (e: MouseEvent) => e.stopPropagation();
 
+  const commit = async () => {
+    const title = titleDraft.trim();
+    const tags = parseTagInput(tagsDraft);
+    const sameTitle = title === session.customTitle;
+    const sameTags =
+      tags.length === session.tags.length &&
+      tags.every((t, i) => t === session.tags[i]);
+    if (sameTitle && sameTags) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSaveNote(session.sessionId, { title, tags });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancel = () => {
+    setTitleDraft(session.customTitle);
+    setTagsDraft(session.tags.join(' '));
+    setEditing(false);
+  };
+
+  const onEditorKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
+  };
+
   return (
     <article
-      className={`session-row${selected ? ' selected' : ''}${session.pinned ? ' pinned' : ''}`}
+      className={`session-row${selected ? ' selected' : ''}${session.pinned ? ' pinned' : ''}${editing ? ' editing' : ''}`}
       role="button"
       tabIndex={0}
-      onClick={() => onSelect(session.sessionId)}
+      onClick={() => {
+        if (!editing) onSelect(session.sessionId);
+      }}
       onKeyDown={handleKeyDown}
     >
       <div className="session-actions-mini">
+        <button
+          className={`session-icon-btn${editing ? ' active' : ''}`}
+          onClick={(e) => {
+            stop(e);
+            setEditing((v) => !v);
+          }}
+          aria-label={editing ? '結束編輯標題與標籤' : '編輯標題與標籤'}
+          title={editing ? '結束編輯' : '編輯標題與標籤'}
+        >
+          <EditIcon />
+        </button>
         <button
           className={`session-icon-btn${session.pinned ? ' active' : ''}`}
           onClick={(e) => {
@@ -72,9 +164,62 @@ export function SessionRow({ session, state, selected, onSelect, onTogglePin, on
         </button>
       </div>
       <div className="session-main">
-        <h3 className="session-title" title={session.title}>
-          {session.title}
+        <h3 className="session-title" title={displayTitle}>
+          {session.customTitle && <span className="session-title-mark" title="自訂標題">✎</span>}
+          {displayTitle}
         </h3>
+        {session.customTitle && (
+          <div className="session-original-title" title={session.title}>
+            原始:{session.title}
+          </div>
+        )}
+        {session.tags.length > 0 && !editing && (
+          <div className="session-tags">
+            {session.tags.map((t) => (
+              <span key={t} className="session-tag" title={`標籤:${t}`}>
+                #{t}
+              </span>
+            ))}
+          </div>
+        )}
+        {editing && (
+          <div className="session-note-editor" onClick={stop} onKeyDown={(e) => e.stopPropagation()}>
+            <label className="note-field">
+              <span className="note-field-label">自訂標題</span>
+              <input
+                ref={titleRef}
+                type="text"
+                className="note-input"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onKeyDown={onEditorKey}
+                placeholder="留空則使用原始標題"
+                maxLength={120}
+                disabled={saving}
+              />
+            </label>
+            <label className="note-field">
+              <span className="note-field-label">標籤</span>
+              <input
+                type="text"
+                className="note-input"
+                value={tagsDraft}
+                onChange={(e) => setTagsDraft(e.target.value)}
+                onKeyDown={onEditorKey}
+                placeholder="以空格或逗號分隔,例如:bugfix auth-flow"
+                disabled={saving}
+              />
+            </label>
+            <div className="note-actions">
+              <button className="ghost" onClick={cancel} disabled={saving}>
+                取消
+              </button>
+              <button className="primary" onClick={commit} disabled={saving}>
+                {saving ? '儲存中…' : '儲存'}
+              </button>
+            </div>
+          </div>
+        )}
         <div className="session-meta">
           <span className="meta-item" title={session.cwd}>
             {shortenPath(session.cwd)}

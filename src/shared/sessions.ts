@@ -128,6 +128,8 @@ async function parseSessionFile(filePath: string, fallbackCwd: string): Promise<
     totalCostUSD,
     pinned: false,
     hidden: false,
+    customTitle: '',
+    tags: [],
   };
 }
 

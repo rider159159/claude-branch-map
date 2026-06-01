@@ -13,6 +13,10 @@ export interface RendererApi {
   branchesForSession: (sessionId: string) => Promise<SessionBranchResult>;
   messagesForSession: (sessionId: string) => Promise<MessageEvent[]>;
   hiddenSessions: () => Promise<SessionSummary[]>;
+  setSessionNote: (
+    sessionId: string,
+    patch: { title?: string; tags?: string[] } | null,
+  ) => Promise<AppSettings>;
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>;
   copyResume: (sessionId: string) => Promise<string>;
