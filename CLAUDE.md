@@ -4,10 +4,11 @@
 
 ## 0. 起手式:先讀 agents/
 
-**接到任何新需求前**,先讀 [agents/README.md](agents/README.md) 與 [agents/conventions/dev-workflow.md](agents/conventions/dev-workflow.md)。
+**接到任何新需求前**,先讀 [agents/README.md](agents/README.md) 與 [agents/conventions/dev-workflow.md](agents/conventions/dev-workflow.md),並掃 [agents/planning/backlog.md](agents/planning/backlog.md) 看新題是否與暫停 🅿️ / 已知 bug 🐛 / 構想 💡 重疊。
 
 - `agents/` 是專案的 SOP / 任務範本 / 每日紀錄 知識庫,改寫自 [hsiangfeng/agent-template](https://github.com/hsiangfeng/agent-template) 的精選版
-- 動筆前先用 `dev-workflow.md` 的 Step 0 判斷任務 Track(A 新功能 / B 修改 / C 除錯),套對應範本寫進 [agents/planning/tasks.md](agents/planning/tasks.md)
+- 動筆前先用 `dev-workflow.md` 的 Step 0 判斷任務 Track(A 新功能 / B 修改 / C 除錯),Step 0.5 比對 `backlog.md`,套對應範本寫進 [agents/planning/tasks.md](agents/planning/tasks.md)
+- 動到一半遇外部 blocker → tasks.md 條目標 🅿️ + 詳情移進 [backlog.md](agents/planning/backlog.md),不要硬幹也不要丟著
 - commit / push 前更新當日 [agents/dev-logs/](agents/dev-logs/) 的 `YYYY-MM-DD.md`,**特別是與使用者的 Q&A 一定要記**
 - commit 訊息格式見 [agents/conventions/commit-message-format.md](agents/conventions/commit-message-format.md)
 
