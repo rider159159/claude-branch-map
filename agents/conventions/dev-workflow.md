@@ -32,6 +32,21 @@
 
 ---
 
+## Step 0.5 — 掃 backlog,確認新任務不重疊
+
+判完類型後、套範本前,**先讀 [agents/planning/backlog.md](../planning/backlog.md)**。比對新任務是否與 backlog 條目同題:
+
+| 情況 | 處理 |
+|---|---|
+| 新題與 backlog 🅿️ 暫停條目同題 | **不另開新題**。確認該條目的「重啟條件」現在是否滿足。滿足 → 內容搬回 tasks.md 加 🚧 動工(原 backlog.md 條目刪除);未滿足 → 跟使用者談先不先處理 blocker |
+| 新題與 backlog 🐛 已知 bug 相關 | 在新 brief 的 Context 引用該 bug,避免修了表面又被 bug 反咬 |
+| 新題與 backlog 💡 構想重疊 | 把 💡 構想條目升級成完整 brief 進 tasks.md,別讓兩處規格分裂 |
+| 與 backlog 無關 | 走 Step A.x / B.x / C.x 子流程 |
+
+**為什麼這步重要**:沒做這步,容易出現「同一題在 tasks.md 與 backlog.md 各自演化、blocker 已解但沒被撿回來、別人又開新 brief 重做一遍」。Step 0.5 強制把 backlog 當第一輪比對來源。
+
+---
+
 ## 三條共通紀律
 
 1. **不確定不能往前** — 模糊處先 `AskUserQuestion`,不腦補

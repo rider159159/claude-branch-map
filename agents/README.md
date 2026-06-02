@@ -21,7 +21,8 @@ agents/
 │   └── dev-log.md                     ← 每日開發日誌
 ├── planning/                          ← 會動的東西
 │   ├── ROADMAP.md                     ← 大方向
-│   └── tasks.md                       ← 進行中 / 待辦 task brief
+│   ├── tasks.md                       ← 進行中 🚧 / 已完成 ✅ / 等使用者澄清 🚫 / 暫停 🅿️(摘要,詳情於 backlog.md)
+│   └── backlog.md                     ← 暫停 🅿️ / 已知 bug 🐛 / 構想 💡(詳情主檔)
 └── dev-logs/                          ← 每日紀錄(YYYY-MM-DD.md)
     └── README.md
 ```
@@ -70,9 +71,11 @@ agents/
 ## 起手式(每次接到新需求)
 
 1. 用 dev-workflow.md 的 Step 0 判斷 Track
-2. 套對應 brief 範本,寫到 `planning/tasks.md`
-3. 動工後 brief 標題前加 `🚧`
-4. 寫程式時遵守 `conventions/commit-message-format.md` 的 commit 格式
-5. 當日結束前更新 `dev-logs/YYYY-MM-DD.md`
-6. commit / push
-7. brief 完成後標題加 `✅` 並附 commit hash
+2. **Step 0.5** — 掃 `planning/backlog.md`,確認新題不重疊 🅿️ / 🐛 / 💡 條目
+3. 套對應 brief 範本,寫到 `planning/tasks.md`
+4. 動工後 brief 標題前加 `🚧`
+5. 寫程式時遵守 `conventions/commit-message-format.md` 的 commit 格式
+6. 當日結束前更新 `dev-logs/YYYY-MM-DD.md`
+7. commit / push
+8. brief 完成後標題加 `✅` 並附 commit hash
+9. 動到一半遇外部 blocker → tasks.md 條目標 🅿️ + 詳情移到 backlog.md
