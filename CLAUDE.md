@@ -2,6 +2,17 @@
 
 本檔案給 Claude Code(claude.ai/code)用,進入此 repo 時請先讀完。所有對話以繁體中文回覆,技術名詞首次出現用「中文(English)」格式。
 
+## 0. 起手式:先讀 agents/
+
+**接到任何新需求前**,先讀 [agents/README.md](agents/README.md) 與 [agents/conventions/dev-workflow.md](agents/conventions/dev-workflow.md)。
+
+- `agents/` 是專案的 SOP / 任務範本 / 每日紀錄 知識庫,改寫自 [hsiangfeng/agent-template](https://github.com/hsiangfeng/agent-template) 的精選版
+- 動筆前先用 `dev-workflow.md` 的 Step 0 判斷任務 Track(A 新功能 / B 修改 / C 除錯),套對應範本寫進 [agents/planning/tasks.md](agents/planning/tasks.md)
+- commit / push 前更新當日 [agents/dev-logs/](agents/dev-logs/) 的 `YYYY-MM-DD.md`,**特別是與使用者的 Q&A 一定要記**
+- commit 訊息格式見 [agents/conventions/commit-message-format.md](agents/conventions/commit-message-format.md)
+
+本檔案(CLAUDE.md)聚焦在 Electron + React 三層架構的**專案特定知識**(IPC 通道、JSONL 格式、分支匹配演算法等),`agents/` 聚焦在**跨專案通用的流程紀律**。兩者互補。
+
 ## 1. 專案總覽與架構
 
 `claude-branch-map` 是 Electron 桌面工具,掃描本機 `~/.claude/projects/` 下的 JSONL 對話檔,將每個對話對應到 Git 分支。目標工作流是「一張票 = 一個 Claude 對話 = 一個 Git 分支」,幾週後仍能回頭找到對應。
@@ -188,7 +199,8 @@ main 與 renderer 雙向 import,Vite 已設好 `@shared` alias:
 
 ### Commit message
 
-- 短、命令式、句首大寫,沿用 git log 既有風格(例:`Add session detail pane with message viewer`、`Fix cwd exclude filter on Windows by normalizing path separators`)
+- **以 [agents/conventions/commit-message-format.md](agents/conventions/commit-message-format.md) 為準**(Conventional Commits + emoji,例:`feat(renderer): 🎸 加上對話搜尋與標籤過濾`)
+- 2026-06-02 之前的 git log 沿用舊的英文命令式短句風格(例:`Add session detail pane with message viewer`),不回溯改寫;讀歷史 commit 時不必對齊新格式
 
 ### Sub-agent
 
