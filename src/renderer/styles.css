@@ -1,28 +1,36 @@
 :root {
   color-scheme: dark;
-  --bg: #161616;
-  --bg-elev: #1f1f1f;
-  --bg-row: #1c1c1c;
-  --bg-row-hover: #232323;
-  --border: #2c2c2c;
-  --text: #ececec;
-  --text-dim: #9a9a9a;
-  --text-mute: #6f6f6f;
-  --accent: #d97706;
-  --accent-soft: rgba(217, 119, 6, 0.15);
-  --high: #4ade80;
-  --high-soft: rgba(74, 222, 128, 0.15);
-  --low: #facc15;
-  --low-soft: rgba(250, 204, 21, 0.12);
-  --error: #f87171;
+  /* GitHub Desktop Dark (Primer) 配色 */
+  --bg: #0D1117;
+  --bg-elev: #161B22;
+  --bg-row: #161B22;
+  --bg-row-hover: #21262D;
+  --border: #30363D;
+  --text: #E6EDF3;
+  --text-dim: #7D8590;
+  --text-mute: #6E7681;
+  --accent: #2F81F7;
+  --accent-soft: rgba(47, 129, 247, 0.15);
+  --high: #3FB950;
+  --high-soft: rgba(63, 185, 80, 0.15);
+  --low: #D29922;
+  --low-soft: rgba(210, 153, 34, 0.12);
+  --error: #F85149;
+
+  /* 字體:Noto Sans TC 處理中文,Noto Sans 處理英數;等寬走 JetBrains Mono */
+  --font-sans: "Noto Sans TC", "Noto Sans", "Microsoft JhengHei", "PingFang TC",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", monospace;
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei",
-    "PingFang TC", Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--bg);
   color: var(--text);
 }
@@ -40,7 +48,7 @@ body {
 .topbar-title h1 {
   margin: 0;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 .logo-dot {
@@ -67,12 +75,12 @@ button:disabled { opacity: 0.5; cursor: default; }
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #1a1100;
-  font-weight: 600;
+  color: #FFFFFF;
+  font-weight: 700;
 }
 button.primary:hover:not(:disabled) {
-  background: #f08a14;
-  border-color: #f08a14;
+  background: #4A95F8;
+  border-color: #4A95F8;
 }
 button.ghost { background: var(--bg-row); }
 
@@ -88,7 +96,7 @@ button.ghost { background: var(--bg-row); }
 .settings-control { display: flex; align-items: center; gap: 8px; flex: 1; }
 .settings-control-col { flex-direction: column; align-items: stretch; gap: 4px; }
 .settings-textarea {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   resize: vertical;
   min-height: 60px;
@@ -101,7 +109,7 @@ button.ghost { background: var(--bg-row); }
 }
 .settings-textarea:focus { outline: none; border-color: var(--accent); }
 .settings-input {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   max-width: 520px;
   background: var(--bg-row);
@@ -153,13 +161,13 @@ button.ghost { background: var(--bg-row); }
 }
 .hidden-project-name {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text);
 }
 .hidden-project-path {
   font-size: 11px;
   color: var(--text-mute);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -300,7 +308,7 @@ select {
 .project-item-skeleton:hover { background: transparent; }
 .project-name {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -309,7 +317,7 @@ select {
 .project-path {
   font-size: 11px;
   color: var(--text-mute);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -362,12 +370,12 @@ select {
 .content-title {
   margin: 0 0 4px;
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .content-subtitle {
   font-size: 12px;
   color: var(--text-mute);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -457,24 +465,6 @@ select {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.session-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 6px;
-}
-.session-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  font-size: 11px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-radius: 10px;
-}
-
 .session-row.editing { cursor: default; }
 .session-note-editor {
   display: flex;
@@ -582,7 +572,7 @@ select {
 .session-title {
   margin: 0 0 6px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -606,7 +596,7 @@ select {
   font-size: 11px;
 }
 .meta-model {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
 }
 
@@ -619,7 +609,7 @@ select {
   background: var(--bg-elev);
   color: var(--text);
 }
-.branch-badge .branch-name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.branch-badge .branch-name { font-family: var(--font-mono); }
 .branch-badge.confidence-high {
   background: var(--high-soft);
   border-color: var(--high);
@@ -694,7 +684,7 @@ select {
 .message-pane-title {
   margin: 0;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -741,7 +731,7 @@ select {
   border-left: 3px solid var(--accent);
 }
 .message-row.assistant {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--high);
 }
 .message-row.sidechain {
   opacity: 0.78;
@@ -770,15 +760,15 @@ select {
   color: var(--accent);
 }
 .role-pill.role-assistant {
-  background: rgba(59, 130, 246, 0.18);
-  color: #93c5fd;
+  background: var(--high-soft);
+  color: var(--high);
 }
 .role-pill.role-side {
   background: rgba(250, 204, 21, 0.18);
   color: var(--low);
 }
 .message-model {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
 }
 .message-tokens, .message-time {
   color: var(--text-mute);
@@ -801,7 +791,7 @@ select {
 .md p:last-child { margin-bottom: 0; }
 .md h1, .md h2, .md h3, .md h4 {
   margin: 12px 0 6px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .md h1 { font-size: 18px; }
 .md h2 { font-size: 16px; }
@@ -815,9 +805,9 @@ select {
   padding: 2px 10px;
   color: var(--text-dim);
 }
-.md a { color: #93c5fd; }
+.md a { color: var(--accent); }
 .md code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 12.5px;
   background: var(--bg-elev);
   border: 1px solid var(--border);
@@ -885,14 +875,14 @@ select {
   transform: rotate(90deg);
 }
 .tool-name {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-weight: 700;
   color: var(--text);
   font-size: 12px;
 }
 .tool-preview {
   color: var(--text-mute);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11.5px;
   white-space: nowrap;
   overflow: hidden;
@@ -931,7 +921,7 @@ select {
   padding: 8px 10px;
   max-height: 320px;
   overflow: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text);
   white-space: pre-wrap;

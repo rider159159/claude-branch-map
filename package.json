@@ -15,6 +15,9 @@
     "package:dir": "electron-vite build && electron-builder --dir"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.1.1",
+    "@fontsource/noto-sans": "^5.1.0",
+    "@fontsource/noto-sans-tc": "^5.1.0",
     "electron-store": "8.2.0",
     "highlight.js": "^11.11.1",
     "react-markdown": "^9.1.0",
