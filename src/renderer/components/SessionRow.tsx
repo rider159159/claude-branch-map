@@ -15,7 +15,7 @@ interface Props {
   onHide: (sessionId: string) => void;
   onSaveNote: (
     sessionId: string,
-    patch: { title?: string; tags?: string[] } | null,
+    patch: { title?: string } | null,
   ) => Promise<void> | void;
 }
 
@@ -30,17 +30,6 @@ function formatCost(c: number): string {
   if (c < 0.01) return '<$0.01';
   if (c < 1) return `$${c.toFixed(2)}`;
   return `$${c.toFixed(2)}`;
-}
-
-function parseTagInput(input: string): string[] {
-  return Array.from(
-    new Set(
-      input
-        .split(/[,\s]+/)
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0),
-    ),
-  );
 }
 
 export function SessionRow({
@@ -58,16 +47,14 @@ export function SessionRow({
 
   const [editing, setEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(session.customTitle);
-  const [tagsDraft, setTagsDraft] = useState(session.tags.join(' '));
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!editing) {
       setTitleDraft(session.customTitle);
-      setTagsDraft(session.tags.join(' '));
     }
-  }, [session.customTitle, session.tags, editing]);
+  }, [session.customTitle, editing]);
 
   useEffect(() => {
     if (editing) titleRef.current?.focus();
@@ -84,18 +71,13 @@ export function SessionRow({
 
   const commit = async () => {
     const title = titleDraft.trim();
-    const tags = parseTagInput(tagsDraft);
-    const sameTitle = title === session.customTitle;
-    const sameTags =
-      tags.length === session.tags.length &&
-      tags.every((t, i) => t === session.tags[i]);
-    if (sameTitle && sameTags) {
+    if (title === session.customTitle) {
       setEditing(false);
       return;
     }
     setSaving(true);
     try {
-      await onSaveNote(session.sessionId, { title, tags });
+      await onSaveNote(session.sessionId, { title });
       setEditing(false);
     } finally {
       setSaving(false);
@@ -104,7 +86,6 @@ export function SessionRow({
 
   const cancel = () => {
     setTitleDraft(session.customTitle);
-    setTagsDraft(session.tags.join(' '));
     setEditing(false);
   };
 
@@ -135,8 +116,8 @@ export function SessionRow({
             stop(e);
             setEditing((v) => !v);
           }}
-          aria-label={editing ? '結束編輯標題與標籤' : '編輯標題與標籤'}
-          title={editing ? '結束編輯' : '編輯標題與標籤'}
+          aria-label={editing ? '結束編輯自訂標題' : '編輯自訂標題'}
+          title={editing ? '結束編輯' : '編輯自訂標題'}
         >
           <EditIcon />
         </button>
@@ -173,15 +154,6 @@ export function SessionRow({
             原始:{session.title}
           </div>
         )}
-        {session.tags.length > 0 && !editing && (
-          <div className="session-tags">
-            {session.tags.map((t) => (
-              <span key={t} className="session-tag" title={`標籤:${t}`}>
-                #{t}
-              </span>
-            ))}
-          </div>
-        )}
         {editing && (
           <div className="session-note-editor" onClick={stop} onKeyDown={(e) => e.stopPropagation()}>
             <label className="note-field">
@@ -195,18 +167,6 @@ export function SessionRow({
                 onKeyDown={onEditorKey}
                 placeholder="留空則使用原始標題"
                 maxLength={120}
-                disabled={saving}
-              />
-            </label>
-            <label className="note-field">
-              <span className="note-field-label">標籤</span>
-              <input
-                type="text"
-                className="note-input"
-                value={tagsDraft}
-                onChange={(e) => setTagsDraft(e.target.value)}
-                onKeyDown={onEditorKey}
-                placeholder="以空格或逗號分隔,例如:bugfix auth-flow"
                 disabled={saving}
               />
             </label>

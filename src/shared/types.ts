@@ -19,12 +19,10 @@ export interface SessionSummary {
   pinned: boolean;
   hidden: boolean;
   customTitle: string;
-  tags: string[];
 }
 
 export interface SessionNote {
   title: string;
-  tags: string[];
 }
 
 export type SessionNotesMap = Record<string, SessionNote>;
@@ -103,7 +101,7 @@ export interface AppSettings {
   pinnedProjects: string[];   // encodedDirName values, order = pin order
   pinnedSessions: string[];   // sessionId values, order = pin order
   hiddenSessions: string[];   // sessionId values
-  sessionNotes: SessionNotesMap; // sessionId → { title, tags } 使用者自訂註解
+  sessionNotes: SessionNotesMap; // sessionId → { title } 使用者自訂註解
   vscodeResumeUriTemplate: string;     // {sessionId} 佔位,best-effort 的 VS Code deep link
   openWorkspaceBeforeResume: boolean;  // 觸發 URI 前先 `code <cwd>` 開啟工作資料夾
   vscodeOpenDelayMs: number;           // 開資料夾與觸發 URI 之間的延遲(ms)

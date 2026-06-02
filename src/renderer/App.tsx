@@ -306,7 +306,7 @@ export function App() {
   const onSaveSessionNote = useCallback(
     async (
       sessionId: string,
-      patch: { title?: string; tags?: string[] } | null,
+      patch: { title?: string } | null,
     ) => {
       const next = await api.setSessionNote(sessionId, patch);
       setSettings(next);
@@ -314,7 +314,7 @@ export function App() {
       setSessions((prev) =>
         prev.map((s) =>
           s.sessionId === sessionId
-            ? { ...s, customTitle: note?.title ?? '', tags: note?.tags ?? [] }
+            ? { ...s, customTitle: note?.title ?? '' }
             : s,
         ),
       );

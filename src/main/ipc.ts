@@ -180,7 +180,6 @@ export function registerIpcHandlers(): void {
           pinned: pinnedSet.has(s.sessionId),
           hidden: hiddenSet.has(s.sessionId),
           customTitle: note?.title ?? '',
-          tags: note?.tags ?? [],
         };
       });
 
@@ -214,7 +213,6 @@ export function registerIpcHandlers(): void {
               ...s,
               hidden: true,
               customTitle: note?.title ?? '',
-              tags: note?.tags ?? [],
             });
           }
         }
@@ -281,7 +279,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     'sessionNotes:set',
-    (_e, sessionId: string, patch: { title?: string; tags?: string[] } | null) => {
+    (_e, sessionId: string, patch: { title?: string } | null) => {
       return setSessionNote(sessionId, patch);
     },
   );

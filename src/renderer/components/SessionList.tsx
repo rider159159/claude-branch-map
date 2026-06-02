@@ -16,26 +16,14 @@ interface Props {
   onHideSession: (sessionId: string) => void;
   onSaveNote: (
     sessionId: string,
-    patch: { title?: string; tags?: string[] } | null,
+    patch: { title?: string } | null,
   ) => Promise<void> | void;
 }
 
 function matchesQuery(session: SessionSummary, q: string): boolean {
   if (!q) return true;
   const needle = q.toLowerCase();
-  // # 開頭 → 只比對 tag,精確去掉前綴
-  if (needle.startsWith('#')) {
-    const t = needle.slice(1);
-    if (!t) return session.tags.length > 0;
-    return session.tags.some((tag) => tag.toLowerCase().includes(t));
-  }
-  const haystacks = [
-    session.title,
-    session.customTitle,
-    session.cwd,
-    session.sessionId,
-    ...session.tags,
-  ];
+  const haystacks = [session.title, session.customTitle, session.cwd, session.sessionId];
   return haystacks.some((h) => h && h.toLowerCase().includes(needle));
 }
 
@@ -64,7 +52,7 @@ export function SessionList({
           className="session-search-input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜尋對話:標題、自訂標題、cwd、#tag、sessionId"
+          placeholder="搜尋對話:標題、自訂標題、cwd、sessionId"
           aria-label="搜尋對話"
           spellCheck={false}
         />

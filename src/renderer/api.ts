@@ -15,7 +15,7 @@ export interface RendererApi {
   hiddenSessions: () => Promise<SessionSummary[]>;
   setSessionNote: (
     sessionId: string,
-    patch: { title?: string; tags?: string[] } | null,
+    patch: { title?: string } | null,
   ) => Promise<AppSettings>;
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>;
