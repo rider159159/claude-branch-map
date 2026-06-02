@@ -129,7 +129,6 @@ async function parseSessionFile(filePath: string, fallbackCwd: string): Promise<
     pinned: false,
     hidden: false,
     customTitle: '',
-    tags: [],
   };
 }
 
