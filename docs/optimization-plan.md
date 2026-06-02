@@ -16,8 +16,8 @@
 
 | 編號 | 標題 | Track | 預估 |
 |---|---|---|---|
-| #1 | 失敗訊息分類化 | 🔧 B | 30 min |
-| #2 | 補 Cursor 編輯器支援 | A | 30 min |
+| #1 | VS Code 失敗訊息分類化 | 🔧 B | 30 min |
+| #2 | Claude hook 健康檢查 + 一鍵安裝引導 | A | 45 min |
 | #3 | 移除 1500ms 寫死延遲 | 🔧 B | 15 min |
 
 **第二輪(流程,中長期價值)** — 預估 3 hr
@@ -85,40 +85,47 @@
 
 ---
 
-## #2 補 Cursor 編輯器支援
+## #2 Claude hook 健康檢查 + 一鍵安裝引導
 
-**Context** — 原規格書 [docs/open-in-editor-plan.md](./open-in-editor-plan.md) 把 Cursor 列為 v1 範圍,但 commit `7e8f78c` 只實作了 VS Code 一半。Cursor 使用者目前完全沒入口。
+**Context** — 本 app 的分支匹配信心度直接取決於 `~/.claude/hooks/branch-hook.{ps1,sh}` 是否安裝、`~/.claude/settings.json` 的 PostToolUse 是否註冊。沒裝 hook 時只能用「session 時間窗 + 分支首次 commit」做後備匹配,精準度落差大。但目前 app **完全不告知使用者 hook 狀態**,使用者不知道自己缺了什麼,也找不到 `scripts/install-hook.{ps1,sh}` 安裝腳本。這是「branch-map」這個名字最核心的工作流缺口。
 
 **Goal**
-- 設定面板提供「VS Code / Cursor」一級下拉
-- 按鈕標籤依設定動態變更(「在 VS Code 繼續對話」/「在 Cursor 繼續對話」)
-- Cursor 路徑使用 `cursor` CLI 與 `cursor://anthropic.claude-code/open?session=...`
+- App 啟動時偵測 hook 安裝狀態,在頂部 banner 或設定面板顯示健康度
+- 未安裝 / 部分安裝 / 完整安裝 三種狀態各有對應提示與動作
+- 提供「一鍵執行 install-hook 腳本」按鈕(內部呼叫既有 `scripts/install-hook.{ps1,sh}`)
+- 完整安裝後,SessionRow 的分支匹配信心度可顯著提升(原本只能靠時間窗的會升級為 high-confidence)
 
 **Scope**
-- shared:`AppSettings.preferredEditor: 'vscode' | 'cursor'`、`DEFAULT_SETTINGS`
-- shared:把 URI template 從單鍵改成依 preferredEditor 對應的 lookup(常數 map)
-- main:`src/main/settings.ts` getSettings 加 fallback(舊 `vscodeResumeUriTemplate` 仍能讀)
-- main:`src/main/resume.ts` 加 `cursor` 與 `cursor.cmd` 的 spawn 路徑
-- renderer:`src/renderer/components/MessageView.tsx` 按鈕標籤依 settings 動態
-- renderer:`src/renderer/components/SettingsPanel.tsx` 加「Open conversations in」下拉,把 URI template / 延遲 ms 收進「進階」摺疊區
+- shared:`src/shared/hook.ts` 加 `getHookHealth()` 回 `{ scriptInstalled, settingsRegistered, jsonlExists, jsonlRecordCount }`
+- main:`src/main/ipc.ts` 加 `hook:health` 與 `hook:install` 兩個 IPC handler
+- main:`hook:install` 在主程序 spawn 對應平台的 install 腳本(Windows: `powershell -ExecutionPolicy Bypass -File scripts/install-hook.ps1`,macOS/Linux: `bash scripts/install-hook.sh`),回 `{ ok, stderr? }`
+- preload:暴露 `hookHealth()` 與 `installHook()`
+- renderer:`src/renderer/api.ts` 對應型別
+- renderer:`src/renderer/App.tsx` 啟動後呼叫 `hookHealth()`,將狀態傳給 banner / 設定面板
+- renderer:`src/renderer/components/SettingsPanel.tsx` 新增「Claude hook 整合」區塊,顯示三個指標 + 安裝按鈕
+- renderer:若 `scriptInstalled = false` 且 `jsonlRecordCount = 0`,在頂部顯示 dismissable banner「分支匹配精準度受限,點我啟用 Claude hook」
 
 **Acceptance**
-- [ ] 設定切到 Cursor → 按鈕變「在 Cursor 繼續對話」
-- [ ] Cursor 已開 → 點按鈕能 resume 到正確 session
-- [ ] Cursor 未開 → spawn cursor + 開 workspace + URI
-- [ ] 預設保持 vscode(既有使用者升級後行為不變)
-- [ ] 舊鍵 `vscodeResumeUriTemplate` 仍能讀(向後相容)
+- [ ] 從未安裝過 hook 的環境啟動 app,看到 banner 提示與「啟用」按鈕
+- [ ] 點「啟用」→ 跑 install 腳本 → 成功訊息 + banner 消失 + `~/.claude/hooks/branch-hook.*` 與 `~/.claude/settings.json` PostToolUse 都正確寫入
+- [ ] 安裝失敗(權限不足、PowerShell 執行原則被擋)→ Toast 顯示具體錯誤,並提示手動指令 fallback
+- [ ] 設定面板「Claude hook 整合」區塊顯示三狀態真實值,可手動點「重新檢查」
+- [ ] 安裝後新建的 session 在 SessionRow 顯示 high-confidence 分支標籤(對照 [src/shared/matcher.ts](../src/shared/matcher.ts) 的 `matchByHook` 路徑)
+- [ ] banner 可手動關閉(寫進 `AppSettings.hookBannerDismissed: boolean`),關閉後不再彈
 - [ ] `npm run build` 全綠
-- [ ] `ipc-boundary-reviewer` 通過
+- [ ] `ipc-boundary-reviewer` 通過(新增 2 個 IPC 通道)
 
 **Non-goals**
-- 不支援同時兩個編輯器(必須單選 preferred)
-- 不自動偵測使用者裝了哪個編輯器
-- 不為 Cursor 寫獨立的 URI handler 對接邏輯(沿用 VS Code 同款 Claude Code 擴充)
+- 不做 hook 移除按鈕(已有 `scripts/uninstall-hook.{ps1,sh}` 命令列腳本,使用者刪除是稀有動作)
+- 不偵測 hook 腳本本身的內容版本(只看「檔案存在 + settings.json 有註冊」)
+- 不在 macOS 上處理 Gatekeeper 警告(install-hook.sh 本來就是純 bash,無簽章問題)
+- 不做 hook log 即時查看(如要看 `branch-hook.jsonl` 內容,使用者用編輯器開即可)
 
 **References**
-- 原規格書:[docs/open-in-editor-plan.md](./open-in-editor-plan.md)
-- 既有實作:commit `7e8f78c`(VS Code 半套)
+- 既有實作:[src/shared/hook.ts](../src/shared/hook.ts) `readHookRecords()`、`groupBySession()`
+- 安裝腳本:[scripts/install-hook.ps1](../scripts/install-hook.ps1)、[scripts/install-hook.sh](../scripts/install-hook.sh)
+- 移除腳本:[scripts/uninstall-hook.ps1](../scripts/uninstall-hook.ps1)、[scripts/uninstall-hook.sh](../scripts/uninstall-hook.sh)
+- 匹配邏輯:[src/shared/matcher.ts](../src/shared/matcher.ts) — 解釋為什麼 hook 影響精準度
 
 ---
 
@@ -344,7 +351,6 @@
 **新 Acceptance**
 - [ ] 「在 VS Code 繼續對話」是視覺最強的按鈕(primary)
 - [ ] 「複製 resume 指令」仍能點(ghost)
-- [ ] 與 #2 Cursor 支援搭配時 primary 標籤動態變更
 - [ ] `npm run build` 全綠
 
 **Non-goals**
