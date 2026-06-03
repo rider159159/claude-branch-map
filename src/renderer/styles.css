@@ -144,6 +144,68 @@ button.ghost { background: var(--bg-row); }
 .settings-number:focus { outline: none; border-color: var(--accent); }
 .settings-hint { color: var(--text-mute); font-size: 11px; max-width: 520px; }
 
+.hook-status {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 520px;
+  font-size: 12px;
+}
+.hook-status li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+.hook-status li.ok { color: var(--text); }
+.hook-status li.missing { color: var(--text-mute); background: var(--error-soft); border-color: var(--error-border); }
+.hook-status-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.hook-status li.ok .hook-status-mark { background: var(--low-soft); color: var(--accent); }
+.hook-status li.missing .hook-status-mark { background: var(--error); color: var(--bg); }
+.settings-code {
+  display: block;
+  max-width: 520px;
+  padding: 6px 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text);
+  user-select: all;
+  word-break: break-all;
+}
+
+.hook-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--error-soft);
+  border-bottom: 1px solid var(--error-border);
+  font-size: 12px;
+  color: var(--text);
+}
+.hook-banner-text { flex: 1; min-width: 0; }
+.hook-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
 .hidden-projects {
   list-style: none;
   padding: 0;

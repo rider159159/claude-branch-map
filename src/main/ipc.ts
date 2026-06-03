@@ -1,7 +1,7 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { join } from 'node:path';
 import { isGitRepo, listBranches } from '@shared/git';
-import { groupBySession, readHookRecords } from '@shared/hook';
+import { getHookHealth, groupBySession, readHookRecords } from '@shared/hook';
 import { matchByHook, matchByTimestamp } from '@shared/matcher';
 import { readSessionMessages } from '@shared/messages';
 import { getProjectsDir } from '@shared/paths';
@@ -301,7 +301,6 @@ export function registerIpcHandlers(): void {
       cwd,
       uriTemplate: settings.vscodeResumeUriTemplate,
       openWorkspaceBeforeResume: settings.openWorkspaceBeforeResume,
-      delayMs: settings.vscodeOpenDelayMs,
     });
   });
 
@@ -317,5 +316,9 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('shell:openExternal', (_e, url: string) => {
     return shell.openExternal(url);
+  });
+
+  ipcMain.handle('hook:health', async () => {
+    return getHookHealth();
   });
 }
