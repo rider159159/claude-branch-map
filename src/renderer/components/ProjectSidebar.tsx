@@ -35,7 +35,10 @@ export function ProjectSidebar({
           </>
         )}
         {!loading && projects.length === 0 && (
-          <div className="sidebar-empty">找不到專案。</div>
+          <div className="sidebar-empty">
+            找不到 <code>~/.claude/projects/</code> 下的對話記錄。
+            請先用 Claude Code CLI 建立過至少一次對話。
+          </div>
         )}
         {projects.map((p) => {
           const selected = p.encodedDirName === selectedEncodedDir;

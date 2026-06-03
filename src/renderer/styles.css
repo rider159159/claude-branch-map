@@ -18,6 +18,9 @@
   --warm: #F0883E;
   --warm-soft: rgba(240, 136, 62, 0.18);
   --error: #F85149;
+  --error-soft: rgba(248, 81, 73, 0.12);
+  --error-border: rgba(248, 81, 73, 0.4);
+  --accent-hover: #4A95F8;
 
   /* 字體:Noto Sans TC 處理中文,Noto Sans 處理英數;等寬走 JetBrains Mono */
   --font-sans: "Noto Sans TC", "Noto Sans", "Microsoft JhengHei", "PingFang TC",
@@ -73,16 +76,20 @@ button {
   transition: background 120ms ease, border-color 120ms ease;
 }
 button:hover:not(:disabled) { background: var(--bg-row-hover); }
+button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
 button:disabled { opacity: 0.5; cursor: default; }
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #FFFFFF;
+  color: #fff;
   font-weight: 700;
 }
 button.primary:hover:not(:disabled) {
-  background: #4A95F8;
-  border-color: #4A95F8;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 button.ghost { background: var(--bg-row); }
 
@@ -229,6 +236,14 @@ select {
   color: var(--text-mute);
   padding: 20px 16px;
   font-size: 12px;
+  line-height: 1.5;
+}
+.sidebar-empty code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-elev);
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 .project-list {
   flex: 1;
@@ -384,11 +399,11 @@ select {
 }
 
 .error {
-  background: rgba(248, 113, 113, 0.1);
+  background: var(--error-soft);
   color: var(--error);
   padding: 12px;
   border-radius: 6px;
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  border: 1px solid var(--error-border);
   margin-bottom: 12px;
 }
 .empty {
@@ -514,6 +529,11 @@ select {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+  font-weight: 700;
+}
+.note-actions button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 .note-actions button:disabled {
   opacity: 0.6;
@@ -777,7 +797,7 @@ select {
   color: var(--warm);
 }
 .role-pill.role-side {
-  background: rgba(250, 204, 21, 0.18);
+  background: var(--low-soft);
   color: var(--low);
 }
 .message-model {
@@ -904,7 +924,7 @@ select {
   flex: 1;
 }
 .tool-error-flag {
-  background: rgba(248, 113, 113, 0.18);
+  background: var(--error-soft);
   color: var(--error);
   font-size: 10px;
   padding: 1px 6px;
@@ -912,7 +932,7 @@ select {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.tool-call.tool-error { border-color: rgba(248, 113, 113, 0.4); }
+.tool-call.tool-error { border-color: var(--error-border); }
 .tool-body {
   padding: 0 12px 10px;
   display: flex;
