@@ -153,23 +153,8 @@ export function SettingsPanel({
             placeholder="vscode://anthropic.claude-code/open?session={sessionId}"
             spellCheck={false}
           />
-          <label className="settings-checkbox">
-            開啟資料夾後等待
-            <input
-              type="number"
-              className="settings-number"
-              min={0}
-              step={100}
-              value={settings.vscodeOpenDelayMs}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                if (Number.isFinite(n)) onChange({ vscodeOpenDelayMs: n });
-              }}
-            />
-            ms 再觸發 deep link
-          </label>
           <span className="settings-hint">
-            URI 樣板的 {'{sessionId}'} 會被代換成對話 ID。deep link 需 VS Code 已開啟對應工作區才能 resume,否則會開新對話。失敗時自動改為複製 resume 指令。
+            URI 樣板的 {'{sessionId}'} 會被代換成對話 ID。deep link 與開啟工作資料夾會同時觸發(IDE 自行排隊),失敗時自動改為複製 resume 指令。
           </span>
         </div>
       </div>

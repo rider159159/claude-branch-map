@@ -301,7 +301,6 @@ export function registerIpcHandlers(): void {
       cwd,
       uriTemplate: settings.vscodeResumeUriTemplate,
       openWorkspaceBeforeResume: settings.openWorkspaceBeforeResume,
-      delayMs: settings.vscodeOpenDelayMs,
     });
   });
 

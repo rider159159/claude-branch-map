@@ -127,7 +127,7 @@ export function MessageView({ session, branchState, onCopy, onOpenInVscode }: Pr
               </button>
             )}
             <button
-              className="ghost"
+              className="primary"
               onClick={async () => {
                 setOpening(true);
                 try {
@@ -141,7 +141,7 @@ export function MessageView({ session, branchState, onCopy, onOpenInVscode }: Pr
             >
               {opening ? '正在開啟 VS Code…' : '在 VS Code 繼續對話'}
             </button>
-            <button className="primary" onClick={() => onCopy(session.sessionId)}>
+            <button className="ghost" onClick={() => onCopy(session.sessionId)}>
               複製 resume 指令
             </button>
           </div>

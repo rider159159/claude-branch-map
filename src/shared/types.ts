@@ -104,7 +104,6 @@ export interface AppSettings {
   sessionNotes: SessionNotesMap; // sessionId → { title } 使用者自訂註解
   vscodeResumeUriTemplate: string;     // {sessionId} 佔位,best-effort 的 VS Code deep link
   openWorkspaceBeforeResume: boolean;  // 觸發 URI 前先 `code <cwd>` 開啟工作資料夾
-  vscodeOpenDelayMs: number;           // 開資料夾與觸發 URI 之間的延遲(ms)
 }
 
 export const DEFAULT_EXCLUDE_CWD_PATTERNS = [
@@ -122,5 +121,4 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sessionNotes: {},
   vscodeResumeUriTemplate: 'vscode://anthropic.claude-code/open?session={sessionId}',
   openWorkspaceBeforeResume: true,
-  vscodeOpenDelayMs: 1500,
 };

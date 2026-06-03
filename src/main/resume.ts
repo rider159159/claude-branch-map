@@ -40,17 +40,22 @@ export async function openInVscode(opts: {
   cwd: string | null;
   uriTemplate: string;
   openWorkspaceBeforeResume: boolean;
-  delayMs: number;
 }): Promise<OpenInVscodeResult> {
-  const { sessionId, cwd, uriTemplate, openWorkspaceBeforeResume, delayMs } = opts;
+  const { sessionId, cwd, uriTemplate, openWorkspaceBeforeResume } = opts;
+  // 先做前置條件檢查,避免 URI 已送出後才發現 cwd 缺失,
+  // 造成「VS Code 被開了一次 + UI fallback 覆寫剪貼簿」的雙重副作用。
+  if (openWorkspaceBeforeResume && (!cwd || cwd.trim().length === 0)) {
+    return { ok: false, error: '找不到此對話的工作目錄(cwd)' };
+  }
+  // URI 與 workspace 並發:URI handler 若先到、IDE 還沒開 workspace,
+  // 後到的 `code <cwd>` 會讓 IDE 載入 workspace 後再排隊處理 URI。
+  // 任一邊失敗都不影響另一邊,整體比舊版「串列 + 1.5s sleep」快約 1.5 秒。
+  if (openWorkspaceBeforeResume && cwd) {
+    openWorkspaceFolder(cwd).catch((err) => {
+      console.error('[openInVscode] spawn code 失敗:', err);
+    });
+  }
   try {
-    if (openWorkspaceBeforeResume) {
-      if (!cwd || cwd.trim().length === 0) {
-        return { ok: false, error: '找不到此對話的工作目錄(cwd)' };
-      }
-      await openWorkspaceFolder(cwd);
-      await new Promise((r) => setTimeout(r, Math.max(0, delayMs)));
-    }
     await shell.openExternal(buildResumeUri(uriTemplate, sessionId));
     return { ok: true };
   } catch (err) {

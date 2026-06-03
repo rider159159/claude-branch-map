@@ -294,8 +294,7 @@ export function App() {
         'hiddenSessions' in patch ||
         'sessionNotes' in patch ||
         'vscodeResumeUriTemplate' in patch ||
-        'openWorkspaceBeforeResume' in patch ||
-        'vscodeOpenDelayMs' in patch;
+        'openWorkspaceBeforeResume' in patch;
       if (!skipReload) {
         await loadProjects({ preferDir: selectedDir });
       }
