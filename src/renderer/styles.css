@@ -15,6 +15,8 @@
   --high-soft: rgba(63, 185, 80, 0.15);
   --low: #D29922;
   --low-soft: rgba(210, 153, 34, 0.12);
+  --warm: #F0883E;
+  --warm-soft: rgba(240, 136, 62, 0.18);
   --error: #F85149;
 
   /* 字體:Noto Sans TC 處理中文,Noto Sans 處理英數;等寬走 JetBrains Mono */
@@ -731,7 +733,7 @@ select {
   border-left: 3px solid var(--accent);
 }
 .message-row.assistant {
-  border-left: 3px solid var(--high);
+  border-left: 3px solid var(--warm);
 }
 .message-row.sidechain {
   opacity: 0.78;
@@ -760,8 +762,8 @@ select {
   color: var(--accent);
 }
 .role-pill.role-assistant {
-  background: var(--high-soft);
-  color: var(--high);
+  background: var(--warm-soft);
+  color: var(--warm);
 }
 .role-pill.role-side {
   background: rgba(250, 204, 21, 0.18);
