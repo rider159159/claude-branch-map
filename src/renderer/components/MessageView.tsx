@@ -10,7 +10,7 @@ interface Props {
   session: SessionSummary | null;
   branchState: RowState | undefined;
   onCopy: (sessionId: string) => void;
-  onOpenInVscode: (sessionId: string) => void;
+  onOpenInVscode: (sessionId: string) => Promise<void>;
 }
 
 type LoadState =
@@ -22,6 +22,7 @@ type LoadState =
 export function MessageView({ session, branchState, onCopy, onOpenInVscode }: Props) {
   const [state, setState] = useState<LoadState>({ status: 'idle' });
   const [showSidechain, setShowSidechain] = useState(false);
+  const [opening, setOpening] = useState(false);
   const fetchToken = useRef(0);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -127,10 +128,18 @@ export function MessageView({ session, branchState, onCopy, onOpenInVscode }: Pr
             )}
             <button
               className="ghost"
-              onClick={() => onOpenInVscode(session.sessionId)}
+              onClick={async () => {
+                setOpening(true);
+                try {
+                  await onOpenInVscode(session.sessionId);
+                } finally {
+                  setOpening(false);
+                }
+              }}
+              disabled={opening}
               title="在 VS Code 的 Claude Code 擴充套件(extension)中繼續此對話。需先安裝該擴充套件,會自動開啟此對話的工作資料夾。"
             >
-              在 VS Code 繼續對話
+              {opening ? '正在開啟 VS Code…' : '在 VS Code 繼續對話'}
             </button>
             <button className="primary" onClick={() => onCopy(session.sessionId)}>
               複製 resume 指令
