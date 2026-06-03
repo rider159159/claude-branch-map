@@ -8,6 +8,18 @@
 ![React](https://img.shields.io/badge/React-18-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6)
 
+> **隱私(Privacy)**:所有運算都在本機。本工具只讀取機器上既有的檔案(`~/.claude/...` 與你的 Git 儲存庫),並執行本機 `git` 指令。**對話內容、檔案路徑、遙測都不會經由網路傳送** — 沒有後端,沒有 analytics。
+
+## 這個工具跟對話歷史檢視器的差異
+
+多數既有工具屬於**對話歷史檢視器(conversation history viewer)** — 把 `~/.claude` 的 transcript 渲染成漂亮的聊天 UI。Claude Branch Map 反過來:**分支 ↔ session 對應**才是主角,不是聊天紀錄本身。
+
+- 它回答的是「*這個*對話產生了哪個分支?」與「*這個*分支是哪段對話產出的?」 — 你幾週後才會遇上的問題
+- 它用兩層比對:**PostToolUse hook** 給高信心配對,沒有 hook 資料時退回 **commit 時間戳對齊**
+- 目標是快速還原 + 一鍵 `claude --resume`,不是瀏覽歷史
+
+若你主要想閱讀與搜尋過去對話,[universal-session-viewer](https://github.com/tad-hq/universal-session-viewer) 或 [claude-code-history-viewer](https://github.com/jhlee0409/claude-code-history-viewer)(這個專案的靈感來源)更合適。
+
 > 設計工作流是「一張票 = 一個 Claude 對話 = 一個 Git 分支」。幾週後回頭時，對話與分支的對應關係難以靠記憶還原 — 這個工具把對應重新建起來，並讓你一鍵接續任一段舊對話。
 
 ---
@@ -192,6 +204,26 @@ scripts/    # hook 腳本與安裝器
 ```
 
 採 Electron 三程序模型：主程序（Node.js，存取檔案系統與 Git）、預載腳本（`contextBridge` 橋接）、渲染程序（React + Vite）。`src/shared/` 由 main 與 renderer 雙向 import。詳見 [CLAUDE.md](CLAUDE.md)。
+
+## 發佈流程
+
+推送版本 tag 會觸發 `.github/workflows/release.yml`,CI 自動建置 Windows 安裝檔並附到 **draft** 狀態的 GitHub Release:
+
+```bash
+npm version patch        # 升 package.json 版號並建立 tag
+git push --follow-tags   # 推送 commit 與 v* tag
+```
+
+在 GitHub 上檢查 draft release 後手動發佈。安裝檔未做程式碼簽章(code signing),會觸發 SmartScreen(見下節)。
+
+## Windows SmartScreen 警告
+
+本 MVP 階段的 Windows 安裝檔**未做程式碼簽章**。Windows 會顯示「Microsoft Defender SmartScreen 已防止無法辨識的應用程式啟動」。安裝步驟:
+
+1. 在 SmartScreen 對話框點「**其他資訊**」
+2. 點「**仍要執行**」
+
+工具於實際使用驗證後,簽章已列入 roadmap。
 
 ## 貢獻
 
