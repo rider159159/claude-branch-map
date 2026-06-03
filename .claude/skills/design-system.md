@@ -7,6 +7,8 @@ description: claude-branch-map 的視覺設計規範 — 色彩 token、字體�
 
 對應檔案:[src/renderer/styles.css](../../src/renderer/styles.css)、[src/renderer/main.tsx](../../src/renderer/main.tsx)、[src/renderer/components/](../../src/renderer/components/)。
 
+互動行為規範(列項工具列顯隱、狀態四件套、空狀態、loading、toast、modal、鍵盤可達性)在 [ux-patterns](ux-patterns.md),本 skill 是視覺層,兩者搭配使用。
+
 ---
 
 ## 1. 色彩 token
@@ -41,6 +43,8 @@ description: claude-branch-map 的視覺設計規範 — 色彩 token、字體�
 | `--high-soft` | `rgba(63,185,80,0.15)` | high 半透明背景 |
 | `--low` | `#D29922` | 低信心黃 — branch-badge.confidence-low、sidechain role-pill |
 | `--low-soft` | `rgba(210,153,34,0.12)` | low 半透明背景 |
+| `--warm` | `#F0883E` | 暖橙 — ASSISTANT role-pill、assistant 訊息邊框(與藍色 USER 形成對角色相對比) |
+| `--warm-soft` | `rgba(240,136,62,0.18)` | warm 半透明背景 |
 | `--error` | `#F85149` | 錯誤紅 — error block、tool-error-flag |
 
 ### 使用規則(必守)
@@ -134,7 +138,7 @@ description: claude-branch-map 的視覺設計規範 — 色彩 token、字體�
   color: var(--text);
 }
 .role-pill.role-user      { background: var(--accent-soft); color: var(--accent); }
-.role-pill.role-assistant { background: var(--high-soft);   color: var(--high); }
+.role-pill.role-assistant { background: var(--warm-soft);   color: var(--warm); }
 .role-pill.role-side      { background: var(--low-soft);    color: var(--low); }
 ```
 
