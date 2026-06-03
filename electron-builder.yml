@@ -13,7 +13,9 @@ win:
     - target: nsis
       arch:
         - x64
-  artifactName: ClaudeBranchMap-Setup-${version}.exe
+    - target: portable
+      arch:
+        - x64
 mac:
   target:
     - target: dmg
@@ -28,3 +30,6 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Claude Branch Map
+  artifactName: ClaudeBranchMap-Setup-${version}.exe
+portable:
+  artifactName: ClaudeBranchMap-${version}-portable.exe
