@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { HookHealth } from '@shared/hook';
 import type {
   AppSettings,
   MessageEvent,
@@ -31,6 +32,7 @@ const api = {
     ipcRenderer.invoke('resume:openInVscode', sessionId),
   pickRepo: (): Promise<string | null> => ipcRenderer.invoke('repo:pick'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
+  hookHealth: (): Promise<HookHealth> => ipcRenderer.invoke('hook:health'),
 };
 
 contextBridge.exposeInMainWorld('api', api);

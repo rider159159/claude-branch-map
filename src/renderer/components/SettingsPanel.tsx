@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { HookHealth } from '@shared/hook';
 import type { AppSettings, BranchIconMode, ProjectInfo, SessionSummary } from '@shared/types';
 import { api } from '../api';
 import { shortenPath } from '../format';
@@ -6,17 +7,23 @@ import { shortenPath } from '../format';
 interface Props {
   settings: AppSettings;
   hiddenProjects: ProjectInfo[];
+  hookHealth: HookHealth | null;
+  hookHealthError: string | null;
   onChange: (patch: Partial<AppSettings>) => void;
   onShowProject: (encodedDirName: string) => void;
   onShowSession: (sessionId: string) => void;
+  onRefreshHookHealth: () => Promise<void>;
 }
 
 export function SettingsPanel({
   settings,
   hiddenProjects,
+  hookHealth,
+  hookHealthError,
   onChange,
   onShowProject,
   onShowSession,
+  onRefreshHookHealth,
 }: Props) {
   const [hiddenSessions, setHiddenSessions] = useState<SessionSummary[]>([]);
   useEffect(() => {
@@ -28,6 +35,36 @@ export function SettingsPanel({
       alive = false;
     };
   }, [settings.hiddenSessions]);
+
+  const [refreshingHook, setRefreshingHook] = useState(false);
+  const [copyHint, setCopyHint] = useState<string | null>(null);
+
+  // 平台未知前不顯示指令,避免 Windows 使用者看到 bash 指令(反之亦然)。
+  const installCommand: string | null = hookHealth
+    ? hookHealth.platform === 'win32'
+      ? 'powershell -ExecutionPolicy Bypass -File scripts\\install-hook.ps1'
+      : 'bash scripts/install-hook.sh'
+    : null;
+
+  const onCopyInstallCmd = useCallback(async () => {
+    if (!installCommand) return;
+    try {
+      await navigator.clipboard.writeText(installCommand);
+      setCopyHint('已複製。請在 claude-branch-map 專案根目錄的終端執行。');
+    } catch {
+      setCopyHint('複製失敗,請手動選取指令。');
+    }
+    window.setTimeout(() => setCopyHint(null), 3000);
+  }, [installCommand]);
+
+  const onRecheckHook = useCallback(async () => {
+    setRefreshingHook(true);
+    try {
+      await onRefreshHookHealth();
+    } finally {
+      setRefreshingHook(false);
+    }
+  }, [onRefreshHookHealth]);
 
   const [excludeText, setExcludeText] = useState(() =>
     settings.excludeCwdPatterns.join('\n'),
@@ -187,6 +224,59 @@ export function SettingsPanel({
           )}
           <span className="settings-hint">
             隱藏僅影響此介面 — 磁碟上的 jsonl 檔案不會更動。
+          </span>
+        </div>
+      </div>
+      <div className="settings-row settings-row-top" id="settings-hook-section">
+        <label className="settings-label">Claude hook 整合</label>
+        <div className="settings-control settings-control-col">
+          {hookHealthError ? (
+            <span className="settings-hint">
+              無法檢查 hook 狀態:{hookHealthError}
+            </span>
+          ) : hookHealth ? (
+            <ul className="hook-status">
+              <li className={hookHealth.scriptInstalled ? 'ok' : 'missing'}>
+                <span className="hook-status-mark" aria-hidden>
+                  {hookHealth.scriptInstalled ? '✓' : '×'}
+                </span>
+                hook 腳本(~/.claude/hooks/branch-hook.
+                {hookHealth.platform === 'win32' ? 'ps1' : 'sh'})
+              </li>
+              <li className={hookHealth.settingsRegistered ? 'ok' : 'missing'}>
+                <span className="hook-status-mark" aria-hidden>
+                  {hookHealth.settingsRegistered ? '✓' : '×'}
+                </span>
+                Claude 設定已註冊 PostToolUse
+              </li>
+              <li className={hookHealth.jsonlExists ? 'ok' : 'missing'}>
+                <span className="hook-status-mark" aria-hidden>
+                  {hookHealth.jsonlExists ? '✓' : '×'}
+                </span>
+                branch-hook.jsonl 已建立({hookHealth.jsonlRecordCount} 筆紀錄)
+              </li>
+            </ul>
+          ) : (
+            <span className="settings-hint">正在檢查 hook 狀態…</span>
+          )}
+          <div className="settings-control">
+            <button className="ghost" onClick={onRecheckHook} disabled={refreshingHook}>
+              {refreshingHook ? '檢查中…' : '重新檢查'}
+            </button>
+            {installCommand && (
+              <button className="ghost" onClick={onCopyInstallCmd}>
+                複製安裝指令
+              </button>
+            )}
+          </div>
+          {installCommand && (
+            <code className="settings-code" title={installCommand}>
+              {installCommand}
+            </code>
+          )}
+          {copyHint && <span className="settings-hint">{copyHint}</span>}
+          <span className="settings-hint">
+            hook 安裝後,新建對話的分支匹配信心度會從「時間窗推測」升級為「實際 checkout 記錄」。請在 claude-branch-map 專案根目錄的終端執行上述指令(只需做一次)。
           </span>
         </div>
       </div>

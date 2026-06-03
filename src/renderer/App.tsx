@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { HookHealth } from '@shared/hook';
 import type {
   AppSettings,
   ProjectInfo,
@@ -26,6 +27,9 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [hookHealth, setHookHealthState] = useState<HookHealth | null>(null);
+  const [hookHealthError, setHookHealthError] = useState<string | null>(null);
+  const scrollHookOnOpen = useRef(false);
   const fetchToken = useRef(0);
   const sessionsToken = useRef(0);
 
@@ -132,6 +136,38 @@ export function App() {
   useEffect(() => {
     loadProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refreshHookHealth = useCallback(async () => {
+    setHookHealthError(null);
+    try {
+      const h = await api.hookHealth();
+      setHookHealthState(h);
+    } catch (e) {
+      setHookHealthError((e as Error).message);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshHookHealth();
+  }, [refreshHookHealth]);
+
+  // showSettings 由 false → true 後,等 React commit 完才能找到區塊節點。
+  // 用 ref flag 標記「下次開設定要捲到 hook 區塊」,在 SettingsPanel 渲染後
+  // 由 useEffect 觸發,避免 requestAnimationFrame 同 tick 拿不到節點。
+  useEffect(() => {
+    if (showSettings && scrollHookOnOpen.current) {
+      scrollHookOnOpen.current = false;
+      document.getElementById('settings-hook-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [showSettings]);
+
+  const onDismissHookBanner = useCallback(async () => {
+    const next = await api.setSettings({ hookBannerDismissed: true });
+    setSettings(next);
   }, []);
 
   const onSelectProject = useCallback(
@@ -294,7 +330,8 @@ export function App() {
         'hiddenSessions' in patch ||
         'sessionNotes' in patch ||
         'vscodeResumeUriTemplate' in patch ||
-        'openWorkspaceBeforeResume' in patch;
+        'openWorkspaceBeforeResume' in patch ||
+        'hookBannerDismissed' in patch;
       if (!skipReload) {
         await loadProjects({ preferDir: selectedDir });
       }
@@ -362,13 +399,45 @@ export function App() {
         </div>
       </header>
 
+      {settings &&
+        hookHealth &&
+        (!hookHealth.scriptInstalled || !hookHealth.settingsRegistered) &&
+        !settings.hookBannerDismissed && (
+          <div className="hook-banner" role="status">
+            <span className="hook-banner-text">
+              偵測到 Claude hook 尚未完整安裝(腳本或 PostToolUse 註冊缺一),分支匹配精準度受限。建議到設定面板查看安裝指令。
+            </span>
+            <div className="hook-banner-actions">
+              <button
+                className="ghost"
+                onClick={() => {
+                  scrollHookOnOpen.current = true;
+                  setShowSettings(true);
+                }}
+              >
+                前往設定
+              </button>
+              <button
+                className="ghost"
+                onClick={onDismissHookBanner}
+                title="關閉後不再顯示。可從設定面板手動檢查狀態。"
+              >
+                不再提示
+              </button>
+            </div>
+          </div>
+        )}
+
       {showSettings && settings && (
         <SettingsPanel
           settings={settings}
           hiddenProjects={hiddenProjectsList}
+          hookHealth={hookHealth}
+          hookHealthError={hookHealthError}
           onChange={onSettingsChange}
           onShowProject={onShowProject}
           onShowSession={onShowSession}
+          onRefreshHookHealth={refreshHookHealth}
         />
       )}
 

@@ -1,3 +1,4 @@
+import type { HookHealth } from '@shared/hook';
 import type {
   AppSettings,
   MessageEvent,
@@ -23,6 +24,7 @@ export interface RendererApi {
   openInVscode: (sessionId: string) => Promise<OpenInVscodeResult>;
   pickRepo: () => Promise<string | null>;
   openExternal: (url: string) => Promise<void>;
+  hookHealth: () => Promise<HookHealth>;
 }
 
 declare global {

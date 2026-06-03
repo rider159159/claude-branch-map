@@ -53,6 +53,10 @@ export function getSettings(): AppSettings {
       'openWorkspaceBeforeResume',
       DEFAULT_SETTINGS.openWorkspaceBeforeResume,
     ),
+    hookBannerDismissed: store.get(
+      'hookBannerDismissed',
+      DEFAULT_SETTINGS.hookBannerDismissed,
+    ),
   };
 }
 
@@ -113,6 +117,9 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   }
   if ('openWorkspaceBeforeResume' in patch && typeof patch.openWorkspaceBeforeResume === 'boolean') {
     store.set('openWorkspaceBeforeResume', patch.openWorkspaceBeforeResume);
+  }
+  if ('hookBannerDismissed' in patch && typeof patch.hookBannerDismissed === 'boolean') {
+    store.set('hookBannerDismissed', patch.hookBannerDismissed);
   }
   // 一次性清除舊鍵:2026-06-03 移除 vscodeOpenDelayMs(改用 URI + spawn 並發)。
   // 留著 delete 是讓 settings.json 不再殘留死欄位,可在數版後拿掉。
