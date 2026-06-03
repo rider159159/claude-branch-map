@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- 圓角方形底,品牌藍 -->
+  <rect width="512" height="512" rx="96" fill="#4f7dff"/>
+
+  <!-- 分支線 (Git branch shape) -->
+  <g stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- 主幹:左下 → 中央 -->
+    <path d="M 150 400 L 150 256"/>
+    <!-- 分支 1:中央分岔到右上 -->
+    <path d="M 150 256 C 150 200, 220 200, 260 200 L 320 200"/>
+    <!-- 分支 2:中央往下延伸,再分到右下 -->
+    <path d="M 150 256 C 150 320, 220 320, 260 320 L 300 320"/>
+  </g>
+
+  <!-- 節點:主幹起點(實心) -->
+  <circle cx="150" cy="400" r="26" fill="#ffffff"/>
+  <!-- 節點:中央分岔點(實心) -->
+  <circle cx="150" cy="256" r="26" fill="#ffffff"/>
+  <!-- 節點:分支 2 終點(空心) -->
+  <circle cx="300" cy="320" r="22" fill="#4f7dff" stroke="#ffffff" stroke-width="18"/>
+
+  <!-- 對話氣泡:接到分支 1 終點 -->
+  <g>
+    <path d="M 330 130 L 440 130 Q 460 130 460 150 L 460 220 Q 460 240 440 240 L 360 240 L 340 265 L 340 240 L 330 240 Q 310 240 310 220 L 310 150 Q 310 130 330 130 Z"
+          fill="#ffffff"/>
+    <!-- 氣泡內三個小圓點 -->
+    <circle cx="350" cy="185" r="10" fill="#4f7dff"/>
+    <circle cx="385" cy="185" r="10" fill="#4f7dff"/>
+    <circle cx="420" cy="185" r="10" fill="#4f7dff"/>
+  </g>
+</svg>

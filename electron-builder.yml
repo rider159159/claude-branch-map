@@ -8,13 +8,18 @@ files:
   - package.json
   - "!**/{.DS_Store,.editorconfig,.eslintrc,.gitignore,.prettierrc,tsconfig*.json}"
 asar: true
+extraResources:
+  - from: build/icon.png
+    to: icon.png
 win:
+  icon: build/icon.ico
   target:
     - target: nsis
       arch:
         - x64
   artifactName: ClaudeBranchMap-Setup-${version}.exe
 mac:
+  icon: build/icon.png
   target:
     - target: dmg
       arch:

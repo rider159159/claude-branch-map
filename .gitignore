@@ -7,3 +7,7 @@ dist/
 .idea/
 .env
 .env.local
+
+# build/ 內只追蹤 icon.svg 原稿,產出物由 npm run build:icon 重建
+build/icon.png
+build/icon.ico
