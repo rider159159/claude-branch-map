@@ -522,7 +522,7 @@ select {
 
 .session-row {
   display: flex; justify-content: space-between; gap: 12px;
-  padding: 12px 14px;
+  padding: 12px 14px 22px;
   background: var(--bg-row);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -558,21 +558,29 @@ select {
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 4px;
   color: var(--text-mute);
   cursor: pointer;
-  transition: background 100ms ease, color 100ms ease;
+  opacity: 0;
+  transition: opacity 100ms ease, background 100ms ease, color 100ms ease;
 }
+.session-row:hover .session-icon-btn,
+.session-row:focus-within .session-icon-btn { opacity: 1; }
 .session-icon-btn:hover { background: var(--bg-row-hover); color: var(--text); }
-.session-icon-btn.active { color: var(--accent); border-color: var(--accent); opacity: 1; }
-.session-icon-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+.session-icon-btn.active { opacity: 1; color: var(--accent); border-color: var(--accent); }
+.session-icon-btn:focus-visible {
+  opacity: 1;
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
 .session-row.pinned .session-icon-btn.active { opacity: 1; }
 .session-row.pinned .session-actions-mini { opacity: 1; }
 .session-main { flex: 1; min-width: 0; }
 .session-title {
   margin: 0 0 6px;
+  padding-right: 88px;
   font-size: 14px;
   font-weight: 700;
   overflow: hidden;
@@ -594,6 +602,9 @@ select {
 .session-repo { color: var(--text-mute); font-size: 11px; }
 
 .session-id {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
   color: var(--text-mute);
   font-size: 11px;
 }
