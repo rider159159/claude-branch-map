@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { HookHealth } from '@shared/hook';
 import type {
   AppSettings,
+  MessageEvent,
+  OpenInVscodeResult,
   ProjectInfo,
   SessionBranchResult,
   SessionSummary,
@@ -13,13 +16,23 @@ const api = {
     ipcRenderer.invoke('sessions:forProject', encodedDirName),
   branchesForSession: (sessionId: string): Promise<SessionBranchResult> =>
     ipcRenderer.invoke('branches:forSession', sessionId),
+  messagesForSession: (sessionId: string): Promise<MessageEvent[]> =>
+    ipcRenderer.invoke('messages:forSession', sessionId),
+  hiddenSessions: (): Promise<SessionSummary[]> => ipcRenderer.invoke('sessions:hidden'),
+  setSessionNote: (
+    sessionId: string,
+    patch: { title?: string } | null,
+  ): Promise<AppSettings> => ipcRenderer.invoke('sessionNotes:set', sessionId, patch),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   setSettings: (patch: Partial<AppSettings>): Promise<AppSettings> =>
     ipcRenderer.invoke('settings:set', patch),
   copyResume: (sessionId: string): Promise<string> =>
     ipcRenderer.invoke('resume:copy', sessionId),
+  openInVscode: (sessionId: string): Promise<OpenInVscodeResult> =>
+    ipcRenderer.invoke('resume:openInVscode', sessionId),
   pickRepo: (): Promise<string | null> => ipcRenderer.invoke('repo:pick'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
+  hookHealth: (): Promise<HookHealth> => ipcRenderer.invoke('hook:health'),
 };
 
 contextBridge.exposeInMainWorld('api', api);

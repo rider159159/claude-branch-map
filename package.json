@@ -10,11 +10,20 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
-    "package:win": "electron-vite build && electron-builder --win",
-    "package:dir": "electron-vite build && electron-builder --dir"
+    "build:icon": "node scripts/build-icon.mjs",
+    "package:win": "npm run build:icon && electron-vite build && electron-builder --win",
+    "package:mac": "npm run build:icon && electron-vite build && electron-builder --mac",
+    "package:dir": "npm run build:icon && electron-vite build && electron-builder --dir"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.1.1",
+    "@fontsource/noto-sans": "^5.1.0",
+    "@fontsource/noto-sans-tc": "^5.1.0",
     "electron-store": "8.2.0",
+    "highlight.js": "^11.11.1",
+    "react-markdown": "^9.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
     "simple-git": "3.25.0"
   },
   "devDependencies": {
@@ -25,8 +34,10 @@
     "electron": "30.0.1",
     "electron-builder": "24.13.3",
     "electron-vite": "2.1.0",
+    "png-to-ico": "^3.0.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "sharp": "^0.34.5",
     "typescript": "5.4.5",
     "vite": "5.2.8"
   }

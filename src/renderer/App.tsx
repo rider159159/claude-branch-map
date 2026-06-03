@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { HookHealth } from '@shared/hook';
 import type {
   AppSettings,
   ProjectInfo,
@@ -6,6 +7,7 @@ import type {
   SessionSummary,
 } from '@shared/types';
 import { api } from './api';
+import { MessageView } from './components/MessageView';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { SessionList, type RowState } from './components/SessionList';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -16,6 +18,7 @@ const BRANCH_CONCURRENCY = 6;
 export function App() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [selectedDir, setSelectedDir] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [branchState, setBranchState] = useState<Map<string, RowState>>(new Map());
@@ -24,6 +27,9 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [hookHealth, setHookHealthState] = useState<HookHealth | null>(null);
+  const [hookHealthError, setHookHealthError] = useState<string | null>(null);
+  const scrollHookOnOpen = useRef(false);
   const fetchToken = useRef(0);
   const sessionsToken = useRef(0);
 
@@ -64,6 +70,7 @@ export function App() {
       setSessionsLoading(true);
       setSessions([]);
       setBranchState(new Map());
+      setSelectedSessionId(null);
       try {
         const list = await api.sessionsForProject(encodedDir);
         if (sessionsToken.current !== token) return;
@@ -112,6 +119,7 @@ export function App() {
           setSelectedDir(null);
           setSessions([]);
           setBranchState(new Map());
+          setSelectedSessionId(null);
         }
       } catch (e) {
         if (fetchToken.current !== token) return;
@@ -128,6 +136,38 @@ export function App() {
   useEffect(() => {
     loadProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refreshHookHealth = useCallback(async () => {
+    setHookHealthError(null);
+    try {
+      const h = await api.hookHealth();
+      setHookHealthState(h);
+    } catch (e) {
+      setHookHealthError((e as Error).message);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshHookHealth();
+  }, [refreshHookHealth]);
+
+  // showSettings 由 false → true 後,等 React commit 完才能找到區塊節點。
+  // 用 ref flag 標記「下次開設定要捲到 hook 區塊」,在 SettingsPanel 渲染後
+  // 由 useEffect 觸發,避免 requestAnimationFrame 同 tick 拿不到節點。
+  useEffect(() => {
+    if (showSettings && scrollHookOnOpen.current) {
+      scrollHookOnOpen.current = false;
+      document.getElementById('settings-hook-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [showSettings]);
+
+  const onDismissHookBanner = useCallback(async () => {
+    const next = await api.setSettings({ hookBannerDismissed: true });
+    setSettings(next);
   }, []);
 
   const onSelectProject = useCallback(
@@ -181,6 +221,7 @@ export function App() {
           setSelectedDir(null);
           setSessions([]);
           setBranchState(new Map());
+          setSelectedSessionId(null);
         }
       }
     },
@@ -197,26 +238,145 @@ export function App() {
     [settings, updateHiddenSet],
   );
 
+  const sortProjects = useCallback((list: ProjectInfo[]): ProjectInfo[] => {
+    return [...list].sort((a, b) => {
+      if (a.hidden !== b.hidden) return a.hidden ? 1 : -1;
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return b.lastModified - a.lastModified;
+    });
+  }, []);
+
+  const onTogglePinProject = useCallback(
+    async (encodedDir: string) => {
+      const current = settings?.pinnedProjects ?? [];
+      const isPinned = current.includes(encodedDir);
+      const nextPinned = isPinned
+        ? current.filter((p) => p !== encodedDir)
+        : [...current, encodedDir];
+      const next = await api.setSettings({ pinnedProjects: nextPinned });
+      setSettings(next);
+      setProjects((prev) => {
+        const pinSet = new Set(next.pinnedProjects);
+        return sortProjects(prev.map((p) => ({ ...p, pinned: pinSet.has(p.encodedDirName) })));
+      });
+    },
+    [settings, sortProjects],
+  );
+
+  const sortSessions = useCallback((list: SessionSummary[]): SessionSummary[] => {
+    return [...list].sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return b.lastTs - a.lastTs;
+    });
+  }, []);
+
+  const onTogglePinSession = useCallback(
+    async (sessionId: string) => {
+      const current = settings?.pinnedSessions ?? [];
+      const isPinned = current.includes(sessionId);
+      const nextPinned = isPinned
+        ? current.filter((p) => p !== sessionId)
+        : [...current, sessionId];
+      const next = await api.setSettings({ pinnedSessions: nextPinned });
+      setSettings(next);
+      setSessions((prev) => {
+        const pinSet = new Set(next.pinnedSessions);
+        return sortSessions(prev.map((s) => ({ ...s, pinned: pinSet.has(s.sessionId) })));
+      });
+    },
+    [settings, sortSessions],
+  );
+
+  const onHideSession = useCallback(
+    async (sessionId: string) => {
+      const current = settings?.hiddenSessions ?? [];
+      if (current.includes(sessionId)) return;
+      const next = await api.setSettings({ hiddenSessions: [...current, sessionId] });
+      setSettings(next);
+      setSessions((prev) =>
+        prev.map((s) => (s.sessionId === sessionId ? { ...s, hidden: true } : s)),
+      );
+      if (selectedSessionId === sessionId) setSelectedSessionId(null);
+    },
+    [settings, selectedSessionId],
+  );
+
+  const onShowSession = useCallback(
+    async (sessionId: string) => {
+      const current = settings?.hiddenSessions ?? [];
+      if (!current.includes(sessionId)) return;
+      const next = await api.setSettings({
+        hiddenSessions: current.filter((s) => s !== sessionId),
+      });
+      setSettings(next);
+      setSessions((prev) =>
+        prev.map((s) => (s.sessionId === sessionId ? { ...s, hidden: false } : s)),
+      );
+    },
+    [settings],
+  );
+
   const onSettingsChange = useCallback(
     async (patch: Partial<AppSettings>) => {
       const next = await api.setSettings(patch);
       setSettings(next);
-      // hiddenProjects toggles are handled by their own helpers above; for
-      // everything else we re-pull because the change may affect which
-      // projects pass the cwd filter or which branches get returned.
-      if (!('hiddenProjects' in patch)) {
+      // pin/hide toggles are handled by their own helpers above; for everything
+      // else we re-pull because the change may affect which projects pass the
+      // cwd filter or which branches get returned.
+      const skipReload =
+        'hiddenProjects' in patch ||
+        'pinnedProjects' in patch ||
+        'pinnedSessions' in patch ||
+        'hiddenSessions' in patch ||
+        'sessionNotes' in patch ||
+        'vscodeResumeUriTemplate' in patch ||
+        'openWorkspaceBeforeResume' in patch ||
+        'hookBannerDismissed' in patch;
+      if (!skipReload) {
         await loadProjects({ preferDir: selectedDir });
       }
     },
     [loadProjects, selectedDir],
   );
 
+  const onSaveSessionNote = useCallback(
+    async (
+      sessionId: string,
+      patch: { title?: string } | null,
+    ) => {
+      const next = await api.setSessionNote(sessionId, patch);
+      setSettings(next);
+      const note = next.sessionNotes[sessionId];
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.sessionId === sessionId
+            ? { ...s, customTitle: note?.title ?? '' }
+            : s,
+        ),
+      );
+    },
+    [],
+  );
+
   const onCopy = useCallback(async (sessionId: string) => {
     const cmd = await api.copyResume(sessionId);
-    setToast(`Copied: ${cmd}`);
+    setToast(`已複製:${cmd}`);
+  }, []);
+
+  const onOpenInVscode = useCallback(async (sessionId: string) => {
+    const result = await api.openInVscode(sessionId);
+    if (result.ok) {
+      setToast('已在 VS Code 開啟對話,請稍候 VS Code 載入。');
+    } else {
+      const cmd = await api.copyResume(sessionId);
+      setToast(`VS Code 開啟失敗,已改為複製 resume 指令:${cmd}`);
+    }
   }, []);
 
   const selectedProject = visibleProjects.find((p) => p.encodedDirName === selectedDir) ?? null;
+  const selectedSession =
+    selectedSessionId ? sessions.find((s) => s.sessionId === selectedSessionId) ?? null : null;
+  const selectedBranchState = selectedSessionId ? branchState.get(selectedSessionId) : undefined;
 
   return (
     <div className="app">
@@ -231,20 +391,53 @@ export function App() {
             onClick={() => loadProjects({ refresh: true, preferDir: selectedDir })}
             disabled={loadingProjects}
           >
-            {loadingProjects ? 'Loading…' : 'Refresh'}
+            {loadingProjects ? '載入中…' : '重新整理'}
           </button>
           <button className="ghost" onClick={() => setShowSettings((v) => !v)}>
-            {showSettings ? 'Close settings' : 'Settings'}
+            {showSettings ? '關閉設定' : '設定'}
           </button>
         </div>
       </header>
+
+      {settings &&
+        hookHealth &&
+        (!hookHealth.scriptInstalled || !hookHealth.settingsRegistered) &&
+        !settings.hookBannerDismissed && (
+          <div className="hook-banner" role="status">
+            <span className="hook-banner-text">
+              偵測到 Claude hook 尚未完整安裝(腳本或 PostToolUse 註冊缺一),分支匹配精準度受限。建議到設定面板查看安裝指令。
+            </span>
+            <div className="hook-banner-actions">
+              <button
+                className="ghost"
+                onClick={() => {
+                  scrollHookOnOpen.current = true;
+                  setShowSettings(true);
+                }}
+              >
+                前往設定
+              </button>
+              <button
+                className="ghost"
+                onClick={onDismissHookBanner}
+                title="關閉後不再顯示。可從設定面板手動檢查狀態。"
+              >
+                不再提示
+              </button>
+            </div>
+          </div>
+        )}
 
       {showSettings && settings && (
         <SettingsPanel
           settings={settings}
           hiddenProjects={hiddenProjectsList}
+          hookHealth={hookHealth}
+          hookHealthError={hookHealthError}
           onChange={onSettingsChange}
           onShowProject={onShowProject}
+          onShowSession={onShowSession}
+          onRefreshHookHealth={refreshHookHealth}
         />
       )}
 
@@ -254,10 +447,11 @@ export function App() {
           selectedEncodedDir={selectedDir}
           onSelect={onSelectProject}
           onHide={onHideProject}
+          onTogglePin={onTogglePinProject}
           loading={loadingProjects}
         />
-        <main className="content">
-          {error && <div className="error">Failed to load: {error}</div>}
+        <aside className="session-pane">
+          {error && <div className="error">載入失敗:{error}</div>}
           {selectedProject && (
             <header className="content-header">
               <h2 className="content-title">{selectedProject.displayName}</h2>
@@ -267,12 +461,30 @@ export function App() {
             </header>
           )}
           {!error && !sessionsLoading && selectedProject && sessions.length === 0 && (
-            <div className="empty">No sessions in this project.</div>
+            <div className="empty">此專案沒有對話。</div>
           )}
           {!error && !selectedProject && !loadingProjects && (
-            <div className="empty">Select a project on the left.</div>
+            <div className="empty">請從左側選擇專案。</div>
           )}
-          <SessionList sessions={sessions} branchState={branchState} onCopy={onCopy} />
+          <div className="session-pane-scroll">
+            <SessionList
+              sessions={sessions}
+              branchState={branchState}
+              selectedSessionId={selectedSessionId}
+              onSelect={setSelectedSessionId}
+              onTogglePinSession={onTogglePinSession}
+              onHideSession={onHideSession}
+              onSaveNote={onSaveSessionNote}
+            />
+          </div>
+        </aside>
+        <main className="content">
+          <MessageView
+            session={selectedSession}
+            branchState={selectedBranchState}
+            onCopy={onCopy}
+            onOpenInVscode={onOpenInVscode}
+          />
         </main>
       </div>
 

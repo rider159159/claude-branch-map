@@ -8,17 +8,17 @@ export function BranchBadge({ mapped }: Props) {
   const { branch, confidence, source } = mapped;
   const title =
     `${branch.name}\n` +
-    `confidence: ${confidence}\n` +
-    `source: ${source}` +
+    `信心(confidence):${confidence}\n` +
+    `來源(source):${source}` +
     (branch.commitCount > 0
-      ? `\ncommits: ${branch.commitCount}`
+      ? `\ncommit 數:${branch.commitCount}`
       : '');
 
   return (
     <span className={`branch-badge confidence-${confidence} source-${source}`} title={title}>
       <BranchIcon />
       <span className="branch-name">{branch.name}</span>
-      {branch.isCurrent && <span className="branch-current" title="current branch">●</span>}
+      {branch.isCurrent && <span className="branch-current" title="目前分支">●</span>}
     </span>
   );
 }

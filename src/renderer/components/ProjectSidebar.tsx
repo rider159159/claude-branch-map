@@ -1,12 +1,14 @@
 import type { MouseEvent } from 'react';
 import type { ProjectInfo } from '@shared/types';
 import { relativeTime, shortenPath } from '../format';
+import { HideIcon, PinIcon } from './icons';
 
 interface Props {
   projects: ProjectInfo[];
   selectedEncodedDir: string | null;
   onSelect: (encodedDir: string) => void;
   onHide: (encodedDir: string) => void;
+  onTogglePin: (encodedDir: string) => void;
   loading: boolean;
 }
 
@@ -15,12 +17,13 @@ export function ProjectSidebar({
   selectedEncodedDir,
   onSelect,
   onHide,
+  onTogglePin,
   loading,
 }: Props) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-title">Projects</span>
+        <span className="sidebar-title">專案</span>
         <span className="sidebar-count">{projects.length}</span>
       </div>
       <div className="project-list">
@@ -32,18 +35,18 @@ export function ProjectSidebar({
           </>
         )}
         {!loading && projects.length === 0 && (
-          <div className="sidebar-empty">No projects found.</div>
+          <div className="sidebar-empty">
+            找不到 <code>~/.claude/projects/</code> 下的對話記錄。
+            請先用 Claude Code CLI 建立過至少一次對話。
+          </div>
         )}
         {projects.map((p) => {
           const selected = p.encodedDirName === selectedEncodedDir;
-          const handleHide = (e: MouseEvent) => {
-            e.stopPropagation();
-            onHide(p.encodedDirName);
-          };
+          const stop = (e: MouseEvent) => e.stopPropagation();
           return (
             <div
               key={p.encodedDirName}
-              className={`project-item${selected ? ' selected' : ''}`}
+              className={`project-item${selected ? ' selected' : ''}${p.pinned ? ' pinned' : ''}`}
               onClick={() => onSelect(p.encodedDirName)}
               title={p.actualPath}
               role="button"
@@ -59,19 +62,35 @@ export function ProjectSidebar({
                 <div className="project-name">{p.displayName}</div>
                 <div className="project-path">{shortenPath(p.actualPath, 3)}</div>
                 <div className="project-meta">
-                  <span>{p.sessionCount} sessions</span>
+                  <span>{p.sessionCount} 則對話</span>
                   <span className="dot">·</span>
                   <span>{relativeTime(p.lastModified)}</span>
                 </div>
               </div>
-              <button
-                className="project-hide-btn"
-                onClick={handleHide}
-                aria-label={`Hide ${p.displayName}`}
-                title="Hide from sidebar (restore in Settings)"
-              >
-                <EyeOffIcon />
-              </button>
+              <div className="project-actions">
+                <button
+                  className={`project-icon-btn${p.pinned ? ' active' : ''}`}
+                  onClick={(e) => {
+                    stop(e);
+                    onTogglePin(p.encodedDirName);
+                  }}
+                  aria-label={p.pinned ? `取消釘選 ${p.displayName}` : `釘選 ${p.displayName}`}
+                  title={p.pinned ? '取消釘選' : '釘選至頂端'}
+                >
+                  <PinIcon filled={p.pinned} />
+                </button>
+                <button
+                  className="project-icon-btn"
+                  onClick={(e) => {
+                    stop(e);
+                    onHide(p.encodedDirName);
+                  }}
+                  aria-label={`隱藏 ${p.displayName}`}
+                  title="從側邊欄隱藏(可至設定還原)"
+                >
+                  <HideIcon />
+                </button>
+              </div>
             </div>
           );
         })}
@@ -88,26 +107,5 @@ function ProjectSkeleton() {
         <div className="project-skeleton-line short skeleton-shimmer" />
       </div>
     </div>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-      <line x1="2" y1="2" x2="22" y2="22" />
-    </svg>
   );
 }

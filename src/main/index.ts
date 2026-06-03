@@ -1,8 +1,18 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { registerIpcHandlers } from './ipc';
 
 const isDev = !app.isPackaged;
+
+function resolveWindowIcon(): string | undefined {
+  // dev: build/icon.png 需先跑 npm run build:icon 產出;若無則回傳 undefined 讓 Electron 用預設
+  // packaged: 由 electron-builder 透過 extraResources 複製到 resources/icon.png
+  const candidate = isDev
+    ? join(__dirname, '../../build/icon.png')
+    : join(process.resourcesPath, 'icon.png');
+  return existsSync(candidate) ? candidate : undefined;
+}
 
 function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -11,6 +21,7 @@ function createMainWindow(): BrowserWindow {
     minWidth: 820,
     minHeight: 520,
     title: 'Claude Branch Map',
+    icon: resolveWindowIcon(),
     backgroundColor: '#1a1a1a',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -31,6 +42,7 @@ function createMainWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  if (!isDev) Menu.setApplicationMenu(null);
   registerIpcHandlers();
   createMainWindow();
 

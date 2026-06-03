@@ -12,6 +12,43 @@ export interface SessionSummary {
   lastTs: number;
   messageCount: number;
   filePath: string;
+  model: string | null;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCostUSD: number;
+  pinned: boolean;
+  hidden: boolean;
+  customTitle: string;
+}
+
+export interface SessionNote {
+  title: string;
+}
+
+export type SessionNotesMap = Record<string, SessionNote>;
+
+export type ToolBlock =
+  | { kind: 'text'; text: string }
+  | { kind: 'thinking'; text: string }
+  | { kind: 'tool_use'; id: string; name: string; input: unknown }
+  | { kind: 'tool_result'; toolUseId: string; content: unknown; isError: boolean };
+
+export interface MessageEvent {
+  uuid: string;
+  parentUuid: string | null;
+  ts: number | null;
+  role: 'user' | 'assistant';
+  isSidechain: boolean;
+  blocks: ToolBlock[];
+  model: string | null;
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    cacheReadTokens: number;
+    cacheCreationTokens: number;
+  } | null;
+  costUSD: number | null;
+  durationMs: number | null;
 }
 
 export interface ProjectInfo {
@@ -21,6 +58,7 @@ export interface ProjectInfo {
   sessionCount: number;
   lastModified: number;     // ms epoch — newest jsonl mtime
   hidden: boolean;          // user toggled hide on this project (persists)
+  pinned: boolean;          // user pinned this project to the top (persists)
 }
 
 export interface BranchInfo {
@@ -50,11 +88,23 @@ export interface SessionBranchResult {
   repoError?: string;
 }
 
+export interface OpenInVscodeResult {
+  ok: boolean;
+  error?: string;
+}
+
 export interface AppSettings {
   repoPathOverride: string | null;
   branchIconMode: BranchIconMode;
   excludeCwdPatterns: string[];
   hiddenProjects: string[];   // encodedDirName values that the user manually hid
+  pinnedProjects: string[];   // encodedDirName values, order = pin order
+  pinnedSessions: string[];   // sessionId values, order = pin order
+  hiddenSessions: string[];   // sessionId values
+  sessionNotes: SessionNotesMap; // sessionId → { title } 使用者自訂註解
+  vscodeResumeUriTemplate: string;     // {sessionId} 佔位,best-effort 的 VS Code deep link
+  openWorkspaceBeforeResume: boolean;  // 觸發 URI 前先 `code <cwd>` 開啟工作資料夾
+  hookBannerDismissed: boolean;        // 使用者已關閉 hook 未安裝的提示 banner
 }
 
 export const DEFAULT_EXCLUDE_CWD_PATTERNS = [
@@ -66,4 +116,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   branchIconMode: 'created',
   excludeCwdPatterns: DEFAULT_EXCLUDE_CWD_PATTERNS,
   hiddenProjects: [],
+  pinnedProjects: [],
+  pinnedSessions: [],
+  hiddenSessions: [],
+  sessionNotes: {},
+  vscodeResumeUriTemplate: 'vscode://anthropic.claude-code/open?session={sessionId}',
+  openWorkspaceBeforeResume: true,
+  hookBannerDismissed: false,
 };

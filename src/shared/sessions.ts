@@ -1,58 +1,21 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { getProjectsDir } from './paths';
+import {
+  coerceUsage,
+  extractBlocks,
+  extractFirstText,
+  isCountableEvent,
+  isObject,
+  isVisibleEvent,
+  parseTimestamp,
+  pickRole,
+} from './messages';
 import type { SessionSummary } from './types';
 
 const TITLE_MAX = 80;
 
 type AnyRecord = Record<string, unknown>;
-
-function isObject(v: unknown): v is AnyRecord {
-  return typeof v === 'object' && v !== null;
-}
-
-function parseTimestamp(raw: unknown): number | null {
-  if (typeof raw === 'number') return raw < 1e12 ? raw * 1000 : raw;
-  if (typeof raw === 'string') {
-    const t = Date.parse(raw);
-    return Number.isFinite(t) ? t : null;
-  }
-  return null;
-}
-
-function extractText(content: unknown): string | null {
-  if (typeof content === 'string') return content.trim() || null;
-  if (Array.isArray(content)) {
-    for (const part of content) {
-      if (typeof part === 'string' && part.trim()) return part.trim();
-      if (isObject(part)) {
-        if (typeof part.text === 'string' && part.text.trim()) return part.text.trim();
-        if (typeof part.content === 'string' && part.content.trim()) return part.content.trim();
-      }
-    }
-  }
-  if (isObject(content)) {
-    if (typeof content.text === 'string') return content.text.trim() || null;
-  }
-  return null;
-}
-
-function extractTitleFromEvent(ev: AnyRecord): string | null {
-  if (typeof ev.summary === 'string' && ev.summary.trim()) return ev.summary.trim();
-  const msg = ev.message;
-  if (isObject(msg)) {
-    const role = msg.role ?? ev.role;
-    if (role === 'user' || role === undefined) {
-      const t = extractText(msg.content);
-      if (t) return t;
-    }
-  }
-  if (ev.role === 'user' || ev.type === 'user') {
-    const t = extractText(ev.content);
-    if (t) return t;
-  }
-  return null;
-}
 
 function truncateTitle(s: string): string {
   const oneLine = s.replace(/\s+/g, ' ').trim();
@@ -79,6 +42,10 @@ async function parseSessionFile(filePath: string, fallbackCwd: string): Promise<
   let lastTs: number | null = null;
   let messageCount = 0;
   let sessionId: string | null = null;
+  let model: string | null = null;
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCostUSD = 0;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -99,13 +66,34 @@ async function parseSessionFile(filePath: string, fallbackCwd: string): Promise<
       if (lastTs === null || ts > lastTs) lastTs = ts;
     }
 
+    // Title: first non-sidechain, non-meta user text. Falls back to a top-level
+    // `summary` field on the raw event if no user text is found later.
     if (!title) {
-      const t = extractTitleFromEvent(ev);
-      if (t) title = truncateTitle(t);
+      if (ev.isSidechain !== true && isVisibleEvent(ev) && pickRole(ev) === 'user') {
+        const t = extractFirstText(extractBlocks(ev));
+        if (t) title = truncateTitle(t);
+      } else if (typeof ev.summary === 'string' && ev.summary.trim()) {
+        title = truncateTitle(ev.summary);
+      }
     }
 
-    if (isObject(ev.message) || ev.type === 'user' || ev.type === 'assistant') {
+    if (isCountableEvent(ev)) {
       messageCount += 1;
+    }
+
+    // Aggregate model + tokens + cost across assistant turns.
+    if (pickRole(ev) === 'assistant' && ev.isSidechain !== true) {
+      const msg = isObject(ev.message) ? (ev.message as AnyRecord) : null;
+      const m = typeof msg?.model === 'string' && msg.model.trim() ? msg.model : null;
+      if (m) model = m;
+      const usage = coerceUsage(msg?.usage);
+      if (usage) {
+        totalInputTokens += usage.inputTokens;
+        totalOutputTokens += usage.outputTokens;
+      }
+      if (typeof ev.costUSD === 'number' && Number.isFinite(ev.costUSD)) {
+        totalCostUSD += ev.costUSD;
+      }
     }
   }
 
@@ -134,6 +122,13 @@ async function parseSessionFile(filePath: string, fallbackCwd: string): Promise<
     lastTs,
     messageCount,
     filePath,
+    model,
+    totalInputTokens,
+    totalOutputTokens,
+    totalCostUSD,
+    pinned: false,
+    hidden: false,
+    customTitle: '',
   };
 }
 
