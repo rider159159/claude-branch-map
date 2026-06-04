@@ -39,7 +39,10 @@ jobs:
 
       # electron-vite build + electron-builder(產出見 dist/)
       # Windows: NSIS 安裝版 + portable 免安裝版;mac: dmg
-      - run: npm run ${{ matrix.script }}
+      # --publish never:這一步只 build,不讓 electron-builder 自己發佈。
+      #   tag 觸發時 electron-builder 預設會嘗試 publish 並要求 GH_TOKEN;
+      #   發佈統一由後面的 release job 用 action-gh-release 處理。
+      - run: npm run ${{ matrix.script }} -- --publish never
 
       - uses: actions/upload-artifact@v4
         with:
